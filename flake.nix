@@ -1,78 +1,68 @@
 {
-  description = "Home Config";
+  description = "Dotfiles (HM modules + nix-darwin module)";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-
-    home-manager = {
-      url = "github:nix-community/home-manager";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
-    nixvim = {
-      url = "github:nix-community/nixvim";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
+    home-manager.url = "github:nix-community/home-manager";
+    home-manager.inputs.nixpkgs.follows = "nixpkgs";
+    nixvim.url = "github:nix-community/nixvim";
+    nixvim.inputs.nixpkgs.follows = "nixpkgs";
   };
 
-  outputs =
-    {
-      self,
-      nixpkgs,
-      home-manager,
-      nixvim,
-      ...
-    }:
-    let
-      systems = [
-        "x86_64-linux"
-        "aarch64-darwin"
-      ];
-      genAttrs = nixpkgs.lib.genAttrs;
-    in
-    {
-      homeConfigurations = genAttrs systems (
-        system:
-        let
-          pkgs = import nixpkgs { inherit system; };
-        in
-        home-manager.lib.homeManagerConfiguration {
-          inherit pkgs;
+  outputs = { self, nixpkgs, home-manager, nixvim, ... }:
+  let
+    lib = nixpkgs.lib;
 
-          modules = [
-            nixvim.homeManagerModules.nixvim
-            ./home-manager/common.nix
-            ./home-manager/nvim.nix
-            ./home-manager/shell.nix
-          ];
-        }
-      );
-
-      formatter = genAttrs systems (
-        system:
-        let
-          pkgs = import nixpkgs { inherit system; };
-        in
-        pkgs.nixfmt-tree
-      );
-
-      apps = nixpkgs.lib.genAttrs systems (
-        system:
-        let
-          pkgs = import nixpkgs { inherit system; };
-          updateHomeDrv = pkgs.writeShellScriptBin "updateHome" ''
-            # update all inputs (including home-manager)
-            nix flake update
-            # rebuild & activate your home‐manager config
-            nix run .#homeConfigurations.${system}.activationPackage
-          '';
-        in
-        {
-          updateHome = {
-            type = "app";
-            program = "${updateHomeDrv}/bin/updateHome";
-          };
-        }
-      );
+    hmModules = {
+      common = ./home-manager/common.nix;
+      nvim   = ./home-manager/nvim.nix;
+      shell  = ./home-manager/shell.nix;
+      # nixvim lives in the nixvim input
     };
+  in {
+    # Export your HM modules so others can import them
+    hmModules = hmModules;
+
+    # Export a nix-darwin module that carries your macOS defaults + HM wiring.
+    darwinModules.base = { lib, config, nixvim, home-manager, ... }:
+    let
+      cfg = config.dotfiles;
+    in {
+      # Make the module configurable by the wrapper
+      options.dotfiles = {
+        enable = lib.mkEnableOption "dotfiles base macOS settings";
+        user = lib.mkOption {
+          type = lib.types.str;
+          description = "Login username to attach the Home Manager profile to.";
+          example = "raoul";
+        };
+      };
+
+      # Pull in Home Manager as a module here so the wrapper doesn't have to
+      imports = [ home-manager.darwinModules.home-manager ];
+
+      config = lib.mkIf cfg.enable {
+        # macOS (nix-darwin) defaults you wanted in-repo
+        services.nix-daemon.enable = true;
+        programs.zsh.enable = true;
+        nix.settings.experimental-features = [ "nix-command" "flakes" ];
+
+        # HM integration
+        home-manager.useGlobalPkgs = true;
+        home-manager.useUserPackages = true;
+
+        # Reasonable default home path on macOS (override from wrapper if needed)
+        users.users.${cfg.user}.home = lib.mkDefault "/Users/${cfg.user}";
+
+        # Your HM stack
+        home-manager.users.${cfg.user}.imports = [
+          nixvim.homeManagerModules.nixvim
+          hmModules.common
+          hmModules.nvim
+          hmModules.shell
+        ];
+      };
+    };
+  };
 }
+
