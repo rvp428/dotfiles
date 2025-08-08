@@ -20,11 +20,13 @@ in
     };
   };
 
-  programs.fish.enable = true;
+  programs.fish = {
+    enable = true;
 
-  programs.fish.plugins = [
-    nixFishPlugin
-  ];
+    programs.fish.plugins = [
+      nixFishPlugin
+    ];
+  };
 
   programs.bash.enable = true;
 
@@ -33,5 +35,9 @@ in
   home.sessionVariables = {
     EDITOR = "nvim";
     VISUAL = "nvim";
+  };
+
+  programs.atuin = {
+    enable = true;
   };
 }

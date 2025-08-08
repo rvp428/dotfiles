@@ -21,9 +21,32 @@
 
   # The home.packages option allows you to install Nix packages into your
   # environment.
-  home.packages = [
-    pkgs.htop
-    pkgs.nixfmt-tree
+  home.packages = with pkgs; [
+    # General use
+    atuin
+    alacritty
+    htop
+    ripgrep
+
+    # dev
+    awscli2
+    direnv
+    docker
+    docker-compose
+    gh
+    git
+    jq
+    jqp
+    kubectl
+    meld
+    yq
+
+    # For now, ideally move all of these to devshells instead
+    poetry
+
+    # Nix logistics
+    alejandra
+    nixfmt-tree
     # # It is sometimes useful to fine-tune packages, for example, by applying
     # # overrides. You can do that directly here, just don't forget the
     # # parentheses. Maybe you want to install Nerd Fonts with a limited number of
