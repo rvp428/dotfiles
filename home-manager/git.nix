@@ -5,13 +5,19 @@ let
 in {
   home.packages = [ pkgs.meld ];
 
-  # Sentinel so we can prove HM applied
-  home.file.".hm-meld-test".text = "meld-module-loaded";
-
   programs.git = {
     enable = lib.mkForce true;
 
+    aliases = {
+      cp = "cherry-pick";
+      cpc = "cherry-pick --continue";
+      cpa = "cherry-pick --abort";
+    };
+
     extraConfig = {
+      pull.rebase = true;
+      init.defaultBranch = "main";
+      
       merge.tool = "meld";
       mergetool.keepBackup = false;
       mergetool.prompt = false;

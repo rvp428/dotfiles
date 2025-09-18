@@ -23,6 +23,7 @@
   # environment.
   home.packages = with pkgs; [
     # General use
+    asciidoctor
     atuin
     alacritty
     htop
@@ -61,6 +62,8 @@
     # '')
   ];
 
+  programs.home-manager.enable = true;
+
   programs.ssh = {
     enable = true;
     matchBlocks = {
@@ -71,5 +74,5 @@
     };
   };
 
-  programs.home-manager.enable = true;
+  programs.nix-index-database.comma.enable = true;
 }

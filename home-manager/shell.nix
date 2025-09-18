@@ -23,7 +23,7 @@ in
   programs.fish = {
     enable = true;
 
-    programs.fish.plugins = [
+    plugins = [
       nixFishPlugin
     ];
   };

@@ -7,9 +7,10 @@
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
     nixvim.url = "github:nix-community/nixvim";
     nixvim.inputs.nixpkgs.follows = "nixpkgs";
+    nix-index-database.url = "github:nix-community/nix-index-database";
   };
 
-  outputs = { self, nixpkgs, home-manager, nixvim, ... }:
+  outputs = { self, nixpkgs, home-manager, nixvim, nix-index-database, ... }:
   let
     lib = nixpkgs.lib;
 
@@ -25,7 +26,7 @@
     hmModules = hmModules;
 
     # Export a nix-darwin module that carries your macOS defaults + HM wiring.
-    darwinModules.base = { lib, pkgs, config, nixvim, home-manager, ... }:
+    darwinModules.base = { lib, pkgs, config, nixvim, ... }:
     let
       cfg = config.dotfiles;
     in {
@@ -38,7 +39,7 @@
           example = "raoul";
         };
         
-                homebrew = {
+        homebrew = {
           enable = lib.mkEnableOption "Enable Homebrew management via nix-darwin";
 
           brewPrefix = lib.mkOption {
@@ -83,9 +84,6 @@
         };
       };
 
-      # Pull in Home Manager as a module here so the wrapper doesn't have to
-      imports = [ home-manager.darwinModules.home-manager ];
-
       config = lib.mkIf cfg.enable {
         nix.settings.experimental-features = [ "nix-command" "flakes" ];
         nix.enable = true;
@@ -96,20 +94,44 @@
           # Enable function keys without fn key
           NSGlobalDomain = {
               "com.apple.keyboard.fnState" = true;
-            };
 
-          # Disable F11 getting claimed by the system
-          "com.apple.symbolichotkeys".AppleSymbolicHotKeys = {
-            "36" = { enabled = 0; };
+              # Some of the beeps
+              "com.apple.sound.beep.volume" = 0.0;
           };
+          menuExtraClock = {
+            IsAnalog = false;
+            Show24Hour = true;
+            ShowDate = 0; # 0 = When space allows 1 = Always 2 = Never
+          };
+
+          controlcenter.Bluetooth = true;
         };
+        system.defaults.CustomUserPreferences = {
+          "com.apple.symbolichotkeys" = {
+            AppleSymbolicHotKeys = {
+              "36" = { enabled = false; };
+            };
+          };
+
+          "com.microsoft.VSCode" = { ApplePressAndHoldEnabled = false; };
+        };
+
+        # Removing remaining beeps
+        system.activationScripts.soundPrefs.text = ''
+          /usr/bin/defaults write -g com.apple.sound.uiaudio.enabled -bool false
+          /usr/bin/killall cfprefsd 2>/dev/null || true
+          /usr/bin/killall SystemUIServer 2>/dev/null || true
+        '';
+
 
         # HM integration
         home-manager.useGlobalPkgs = true;
         home-manager.useUserPackages = true;
 
+        home-manager.users.${cfg.user} = { ... }: {
+        };
+
         programs.fish.enable = true;
-        # environment.shells = lib.mkAfter [ pkgs.fish ];
         environment.shells = [ pkgs.fish ];
 
         # Reasonable default home path on macOS (override from wrapper if needed)
@@ -144,29 +166,15 @@
           extraConfig = ''cask_args appdir: "/Applications"'';
         };
 
-	# Your HM stack
-	home-manager.users.${cfg.user}.imports = [
-	  nixvim.homeManagerModules.nixvim
-	  hmModules.common
-          hmModules.git
-	  hmModules.nvim
-	  hmModules.shell
-	];
+            home-manager.sharedModules = [
+              nixvim.homeManagerModules.nixvim
+              nix-index-database.hmModules.nix-index
+              (import ./home-manager/common.nix)
+              (import ./home-manager/git.nix)
+              (import ./home-manager/nvim.nix)
+              (import ./home-manager/shell.nix)
+            ];
       };
-        launchd.user.agents.set-display-sleep = {
-    serviceConfig = {
-      Label = "set-display-sleep";
-      ProgramArguments = [
-        "/bin/sh"
-        "-c"
-        ''
-          /usr/bin/pmset -b displaysleep 2
-          /usr/bin/pmset -c displaysleep 10
-        ''
-      ];
-      RunAtLoad = true;
-    };
-  };
     };
   };
 }
