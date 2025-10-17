@@ -3,14 +3,19 @@
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+
     home-manager.url = "github:nix-community/home-manager";
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
+
+    devshells.url = "path:./devshells";
+    devshells.inputs.nixpkgs.follows = "nixpkgs";
+
     nixvim.url = "github:nix-community/nixvim";
     nixvim.inputs.nixpkgs.follows = "nixpkgs";
     nix-index-database.url = "github:nix-community/nix-index-database";
   };
 
-  outputs = { self, nixpkgs, home-manager, nixvim, nix-index-database, ... }:
+  outputs = { self, nixpkgs, home-manager, devshells, nixvim, nix-index-database, ... }:
   let
     lib = nixpkgs.lib;
 
@@ -19,6 +24,7 @@
       git    = ./home-manager/git.nix;
       nvim   = ./home-manager/nvim.nix;
       shell  = ./home-manager/shell.nix;
+      pytools = ./home-manager/pytools.nix;
       # nixvim lives in the nixvim input
     };
   in {
@@ -129,6 +135,12 @@
         home-manager.useUserPackages = true;
 
         home-manager.users.${cfg.user} = { ... }: {
+          dotfiles.pytools = {
+            enable = true;
+            manageXdgBinHome = true;
+            pyPkgs = ps: [ps.ruamel-yaml ];
+            scripts.fold-scalars-yaml = "py/fold_scalars_yaml.py";
+          };
         };
 
         programs.fish.enable = true;
@@ -166,16 +178,30 @@
           extraConfig = ''cask_args appdir: "/Applications"'';
         };
 
-            home-manager.sharedModules = [
-              nixvim.homeManagerModules.nixvim
-              nix-index-database.hmModules.nix-index
-              (import ./home-manager/common.nix)
-              (import ./home-manager/git.nix)
-              (import ./home-manager/nvim.nix)
-              (import ./home-manager/shell.nix)
-            ];
+        home-manager.sharedModules = [
+          nixvim.homeManagerModules.nixvim
+          nix-index-database.hmModules.nix-index
+          (import ./home-manager/common.nix)
+          (import ./home-manager/git.nix)
+          (import ./home-manager/nvim.nix)
+          (import ./home-manager/shell.nix)
+          (import ./home-manager/pytools.nix)
+        ];
+
+        nix = {
+          registry = {
+            nixpkgs.flake = nixpkgs;
+            "raoul-dotfiles".to = {
+              type = "path";
+              path = "${config.users.users.${cfg.user}.home}/dotfiles";
+            };
+          };
+        };
       };
+
     };
+
+    devShells = devshells.devShells;
   };
 }
 

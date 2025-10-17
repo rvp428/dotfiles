@@ -31,6 +31,7 @@
 
     # dev
     awscli2
+    delta
     direnv
     docker
     docker-compose
@@ -40,7 +41,8 @@
     jqp
     kubectl
     meld
-    yq
+    nix-direnv
+    yq-go
 
     # For now, ideally move all of these to devshells instead
     poetry

@@ -15,9 +15,10 @@ let
       profileBlock = p: ''
         [profile ${p.name}]
         sso_session = ${p.ssoSessionName}
+        sso_start_url = ${p.startUrl}
         sso_account_id = ${p.accountId}
         sso_role_name = ${p.role}
-        region = ${p.region}
+        sso_region = ${p.region}
         ${lib.optionalString p.useCredentialProcess "credential_process = ${if p.credentialProcessCmd != null then p.credentialProcessCmd else "aws-sso-util credential-process --profile ${p.name}"}"}
       '';
     in
@@ -85,6 +86,7 @@ in
         options = {
           name = lib.mkOption { type = lib.types.str; };
           ssoSessionName = lib.mkOption { type = lib.types.str; };
+          startUrl = lib.mkOption { type = lib.types.str; };
           accountId = lib.mkOption { type = lib.types.str; };
           role = lib.mkOption { type = lib.types.str; };
           region = lib.mkOption { type = lib.types.str; };
@@ -117,16 +119,11 @@ in
 
     # Tooling
     home.packages = lib.mkIf cfg.installPackages (with pkgs; [
+      amazon-ecr-credential-helper
       awscli2
-      docker-credential-ecr-login
-      pipx
+      aws-sso-util
       jq
     ]);
-
-    programs.pipx = lib.mkIf cfg.installPackages {
-      enable = true;
-      packages."aws-sso-util".package = "aws-sso-util";
-    };
 
     # ~/.aws/config (composed)
     home.file.".aws/config" = lib.mkIf cfg.manageAwsConfig {
