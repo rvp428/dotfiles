@@ -12,6 +12,10 @@ in {
       cp = "cherry-pick";
       cpc = "cherry-pick --continue";
       cpa = "cherry-pick --abort";
+
+      rb = "rebase";
+      rbc = "rebase --continue";
+      rba = "rebase --abort";
     };
 
     extraConfig = {

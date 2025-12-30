@@ -24,6 +24,7 @@
       git    = ./home-manager/git.nix;
       nvim   = ./home-manager/nvim.nix;
       shell  = ./home-manager/shell.nix;
+      poetry = ./home-manager/poetry.nix;
       pytools = ./home-manager/pytools.nix;
       # nixvim lives in the nixvim input
     };
@@ -185,6 +186,7 @@
           (import ./home-manager/git.nix)
           (import ./home-manager/nvim.nix)
           (import ./home-manager/shell.nix)
+          (import ./home-manager/poetry.nix)
           (import ./home-manager/pytools.nix)
         ];
 
