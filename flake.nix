@@ -13,6 +13,7 @@
     nixvim.url = "github:nix-community/nixvim";
     nixvim.inputs.nixpkgs.follows = "nixpkgs";
     nix-index-database.url = "github:nix-community/nix-index-database";
+    nix-index-database.inputs.nixpkgs.follows = "nixpkgs";
   };
 
   outputs = {
@@ -210,8 +211,8 @@
           ];
 
         home-manager.sharedModules = [
-          nixvim.homeManagerModules.nixvim
-          nix-index-database.hmModules.nix-index
+          nixvim.homeModules.nixvim
+          nix-index-database.homeModules.nix-index
           (import ./home-manager/unfree.nix)
           (import ./home-manager/common.nix)
           (import ./home-manager/git.nix)

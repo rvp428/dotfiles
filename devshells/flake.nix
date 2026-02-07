@@ -144,7 +144,7 @@
 
         packages = with pkgs; [
           python313
-          poetry
+          python313Packages.pipx
           semgrep
           openapi-generator-cli
         ];
@@ -164,46 +164,52 @@
           }
         ];
 
-        devshell.startup.ensure_venv.text = ''
-          (
-            set -euo pipefail
+        devshell.startup.setup_poetry_and_venv.text = ''
+          set -euo pipefail
 
-            # Avoid inheriting any foreign venv
-            unset VIRTUAL_ENV PYTHONHOME PYTHONPATH
+          # Install poetry via pipx if not available
+          export PIPX_HOME="$PWD/.direnv/pipx"
+          export PIPX_BIN_DIR="$PIPX_HOME/bin"
+          export PATH="$PIPX_BIN_DIR:$PATH"
+          mkdir -p "$PIPX_BIN_DIR"
 
-            if [ -f pyproject.toml ]; then
-              # Always use the python3.11 from THIS devshell
-              PY313="$(command -v python3.13)"
-              PY313_REAL="$(realpath "$PY313")"
+          if ! command -v poetry >/dev/null 2>&1; then
+            echo ">>> Installing poetry via pipx ..."
+            pipx install poetry --python "$(command -v python)"
+          fi
 
-              create_or_switch () {
-                echo ">>> Using interpreter: ''${PY313_REAL}"
-                poetry env use "''${PY313_REAL}"
+          # Avoid inheriting any foreign venv
+          unset VIRTUAL_ENV PYTHONHOME PYTHONPATH
+
+          if [ -f pyproject.toml ]; then
+            PY313="$(command -v python3.13)"
+            PY313_REAL="$(realpath "$PY313")"
+
+            if [ ! -d .venv ]; then
+              echo ">>> Creating .venv with Python 3.13"
+              "$PY313_REAL" -m venv .venv
+              poetry env use .venv/bin/python
+              poetry sync --with dev
+            else
+              CURRENT="$(realpath .venv/bin/python || true)"
+              if [ "$CURRENT" != "$PY313_REAL" ]; then
+                echo ">>> Switching venv to Python 3.13"
+                rm -rf .venv
+                "$PY313_REAL" -m venv .venv
+                poetry env use .venv/bin/python
                 poetry sync --with dev
-              }
-
-              if [ ! -d .venv ]; then
-                echo ">>> Creating .venv"
-                create_or_switch
-              else
-                CURRENT="$(realpath .venv/bin/python || true)"
-                if [ "$CURRENT" != "$PY313_REAL" ]; then
-                  echo ">>> Switching venv interpreter to ''${PY313_REAL}"
-                  create_or_switch
-                fi
               fi
-
-              # Re-sync if lockfile changed
-              if [ ! -e .venv/.poetry.lock.mtime ] || [ poetry.lock -nt .venv/.poetry.lock.mtime ]; then
-                echo ">>> Syncing .venv to poetry.lock"
-                poetry sync --with dev
-                cp -p poetry.lock .venv/.poetry.lock.mtime
-              fi
-
-              # Put venv binaries first
-              export PATH="$PWD/.venv/bin:$PATH"
             fi
-          )
+
+            # Re-sync if lockfile changed
+            if [ ! -e .venv/.poetry.lock.mtime ] || [ poetry.lock -nt .venv/.poetry.lock.mtime ]; then
+              echo ">>> Syncing .venv to poetry.lock"
+              poetry sync --with dev
+              cp -p poetry.lock .venv/.poetry.lock.mtime
+            fi
+
+            export PATH="$PWD/.venv/bin:$PATH"
+          fi
         '';
       };
 
