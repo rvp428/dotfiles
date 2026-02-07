@@ -42,10 +42,7 @@
       nushell
 
       # dev
-      apacheKafka
       awscli2
-      clickhouse
-      confluent-cli
       delta
       direnv
       docker
@@ -57,7 +54,6 @@
       kubectl
       meld
       nix-direnv
-      temporal-cli
       yq-go
 
       # Nix logistics -- should these just be devshells also?

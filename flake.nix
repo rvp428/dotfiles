@@ -54,6 +54,12 @@
           example = "raoul";
         };
 
+        extraPackages = lib.mkOption {
+          type = lib.types.listOf lib.types.package;
+          default = [];
+          description = "Additional packages to install via home-manager";
+        };
+
         homebrew = {
           enable = lib.mkEnableOption "Enable Homebrew management via nix-darwin";
 
@@ -112,6 +118,7 @@
         nix.settings.experimental-features = ["nix-command" "flakes"];
         nix.enable = true;
 
+
         system.stateVersion = 6;
 
         system.defaults = {
@@ -148,10 +155,10 @@
         '';
 
         # HM integration
-        home-manager.useGlobalPkgs = true;
-        home-manager.useUserPackages = true;
 
         home-manager.users.${cfg.user} = {...}: {
+          home.packages = cfg.extraPackages;
+
           dotfiles.pytools = {
             enable = true;
             manageXdgBinHome = true;
@@ -195,9 +202,17 @@
           extraConfig = ''cask_args appdir: "/Applications"'';
         };
 
+        # Make sure unfree configuration applies to the global nixpkgs
+        nixpkgs.config.allowUnfreePredicate = pkg:
+          builtins.elem (lib.getName pkg) [
+            "claude-code"
+            "obsidian"
+          ];
+
         home-manager.sharedModules = [
           nixvim.homeManagerModules.nixvim
           nix-index-database.hmModules.nix-index
+          (import ./home-manager/unfree.nix)
           (import ./home-manager/common.nix)
           (import ./home-manager/git.nix)
           (import ./home-manager/nvim.nix)
