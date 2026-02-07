@@ -15,26 +15,34 @@
     nix-index-database.url = "github:nix-community/nix-index-database";
   };
 
-  outputs = { self, nixpkgs, home-manager, devshells, nixvim, nix-index-database, ... }:
-  let
-    lib = nixpkgs.lib;
-
+  outputs = {
+    nixpkgs,
+    devshells,
+    nix-index-database,
+    ...
+  }: let
     hmModules = {
+      unfree = ./home-manager/unfree.nix;
       common = ./home-manager/common.nix;
-      git    = ./home-manager/git.nix;
-      nvim   = ./home-manager/nvim.nix;
-      shell  = ./home-manager/shell.nix;
+      git = ./home-manager/git.nix;
+      nvim = ./home-manager/nvim.nix;
+      shell = ./home-manager/shell.nix;
       poetry = ./home-manager/poetry.nix;
       pytools = ./home-manager/pytools.nix;
       # nixvim lives in the nixvim input
     };
   in {
     # Export your HM modules so others can import them
-    hmModules = hmModules;
+    inherit hmModules;
 
     # Export a nix-darwin module that carries your macOS defaults + HM wiring.
-    darwinModules.base = { lib, pkgs, config, nixvim, ... }:
-    let
+    darwinModules.base = {
+      lib,
+      pkgs,
+      config,
+      nixvim,
+      ...
+    }: let
       cfg = config.dotfiles;
     in {
       # Make the module configurable by the wrapper
@@ -45,7 +53,7 @@
           description = "Login username to attach the Home Manager profile to.";
           example = "raoul";
         };
-        
+
         homebrew = {
           enable = lib.mkEnableOption "Enable Homebrew management via nix-darwin";
 
@@ -57,7 +65,7 @@
 
           taps = lib.mkOption {
             type = lib.types.listOf lib.types.str;
-            default = [ ];
+            default = [];
             description = "Base Brew taps.";
           };
 
@@ -69,22 +77,31 @@
           };
           baseCasks = lib.mkOption {
             type = lib.types.listOf lib.types.str;
-            default = [ "visual-studio-code" "1password" "1password-cli" ];
+            default = ["ghostty" "visual-studio-code" "1password" "1password-cli"];
             description = "Base casks for all machines.";
           };
           baseMasApps = lib.mkOption {
             type = lib.types.attrsOf lib.types.int;
-            default = { };
+            default = {};
             description = "Base Mac App Store apps for all machines (name = id).";
           };
 
           # Per-machine add-ons
-          extraBrews = lib.mkOption { type = lib.types.listOf lib.types.str; default = [ ]; };
-          extraCasks = lib.mkOption { type = lib.types.listOf lib.types.str; default = [ ]; };
-          extraMasApps = lib.mkOption { type = lib.types.attrsOf lib.types.int; default = { }; };
+          extraBrews = lib.mkOption {
+            type = lib.types.listOf lib.types.str;
+            default = [];
+          };
+          extraCasks = lib.mkOption {
+            type = lib.types.listOf lib.types.str;
+            default = [];
+          };
+          extraMasApps = lib.mkOption {
+            type = lib.types.attrsOf lib.types.int;
+            default = {};
+          };
 
           cleanupMode = lib.mkOption {
-            type = lib.types.enum [ "none" "uninstall" "zap" ];
+            type = lib.types.enum ["none" "uninstall" "zap"];
             default = "uninstall";
             description = "Cleanup behavior on activation.";
           };
@@ -92,7 +109,7 @@
       };
 
       config = lib.mkIf cfg.enable {
-        nix.settings.experimental-features = [ "nix-command" "flakes" ];
+        nix.settings.experimental-features = ["nix-command" "flakes"];
         nix.enable = true;
 
         system.stateVersion = 6;
@@ -100,10 +117,10 @@
         system.defaults = {
           # Enable function keys without fn key
           NSGlobalDomain = {
-              "com.apple.keyboard.fnState" = true;
+            "com.apple.keyboard.fnState" = true;
 
-              # Some of the beeps
-              "com.apple.sound.beep.volume" = 0.0;
+            # Some of the beeps
+            "com.apple.sound.beep.volume" = 0.0;
           };
           menuExtraClock = {
             IsAnalog = false;
@@ -116,11 +133,11 @@
         system.defaults.CustomUserPreferences = {
           "com.apple.symbolichotkeys" = {
             AppleSymbolicHotKeys = {
-              "36" = { enabled = false; };
+              "36" = {enabled = false;};
             };
           };
 
-          "com.microsoft.VSCode" = { ApplePressAndHoldEnabled = false; };
+          "com.microsoft.VSCode" = {ApplePressAndHoldEnabled = false;};
         };
 
         # Removing remaining beeps
@@ -130,28 +147,27 @@
           /usr/bin/killall SystemUIServer 2>/dev/null || true
         '';
 
-
         # HM integration
         home-manager.useGlobalPkgs = true;
         home-manager.useUserPackages = true;
 
-        home-manager.users.${cfg.user} = { ... }: {
+        home-manager.users.${cfg.user} = {...}: {
           dotfiles.pytools = {
             enable = true;
             manageXdgBinHome = true;
-            pyPkgs = ps: [ps.ruamel-yaml ];
+            pyPkgs = ps: [ps.ruamel-yaml];
             scripts.fold-scalars-yaml = "py/fold_scalars_yaml.py";
           };
         };
 
         programs.fish.enable = true;
-        environment.shells = [ pkgs.fish ];
+        environment.shells = [pkgs.fish];
 
         # Reasonable default home path on macOS (override from wrapper if needed)
         users.users.${cfg.user} = {
           home = lib.mkDefault "/Users/${cfg.user}";
           shell = pkgs.fish;
-	};
+        };
 
         system.primaryUser = lib.mkDefault cfg.user;
 
@@ -200,10 +216,8 @@
           };
         };
       };
-
     };
 
     devShells = devshells.devShells;
   };
 }
-

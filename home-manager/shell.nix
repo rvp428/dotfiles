@@ -1,6 +1,4 @@
-{ pkgs, ... }:
-
-let
+{pkgs, ...}: let
   nixFishPlugin = {
     name = "nix.fish";
 
@@ -11,8 +9,7 @@ let
       sha256 = "13x3bfif906nszf4mgsqxfshnjcn6qm4qw1gv7nw89wi4cdp9i8q";
     };
   };
-in
-{
+in {
   home.file = {
     ".config/fish" = {
       source = ../fish;
@@ -20,17 +17,19 @@ in
     };
   };
 
-  programs.fish = {
-    enable = true;
+  programs = {
+    fish = {
+      enable = true;
 
-    plugins = [
-      nixFishPlugin
-    ];
+      plugins = [
+        nixFishPlugin
+      ];
+    };
+
+    bash.enable = true;
+
+    zsh.enable = true;
   };
-
-  programs.bash.enable = true;
-
-  programs.zsh.enable = true;
 
   home.sessionVariables = {
     EDITOR = "nvim";
@@ -39,10 +38,12 @@ in
 
   programs.atuin = {
     enable = true;
+    enableFishIntegration = true;
+    enableZshIntegration = true;
   };
 
   programs.direnv = {
-   enable = true;
-   nix-direnv.enable = true;
+    enable = true;
+    nix-direnv.enable = true;
   };
 }

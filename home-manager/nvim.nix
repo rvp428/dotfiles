@@ -1,10 +1,12 @@
-{
-  config,
-  pkgs,
-  ...
-}: {
+{pkgs, ...}: {
   programs.nixvim = {
     enable = true;
+
+    opts = {
+      # Allow loading local .nvimrc files (secure=true prevents dangerous commands)
+      exrc = true;
+      secure = true;
+    };
 
     plugins = {
       treesitter = {
@@ -59,10 +61,17 @@
           };
         };
       };
+
+      lint = {
+        enable = true;
+        lintersByFt = {
+          nix = ["statix" "deadnix"];
+        };
+      };
     };
 
     extraConfigLua = ''
-      require("settings")
+      require("init")
     '';
   };
 
