@@ -82,9 +82,18 @@
         ];
 
         env = [
-          { name = "POETRY_VIRTUALENVS_CREATE"; value = "1"; }
-          { name = "POETRY_VIRTUALENVS_IN_PROJECT"; value = "1"; }
-          { name = "POETRY_VIRTUALENVS_PREFER_ACTIVE_PYTHON"; value = "0"; }
+          {
+            name = "POETRY_VIRTUALENVS_CREATE";
+            value = "1";
+          }
+          {
+            name = "POETRY_VIRTUALENVS_IN_PROJECT";
+            value = "1";
+          }
+          {
+            name = "POETRY_VIRTUALENVS_PREFER_ACTIVE_PYTHON";
+            value = "0";
+          }
         ];
 
         devshell.startup.ensure_venv.text = ''
@@ -130,6 +139,73 @@
         '';
       };
 
+      devShells.py313new = pkgs.devshell.mkShell {
+        name = "py313new";
+
+        packages = with pkgs; [
+          python313
+          poetry
+          semgrep
+          openapi-generator-cli
+        ];
+
+        env = [
+          {
+            name = "POETRY_VIRTUALENVS_CREATE";
+            value = "1";
+          }
+          {
+            name = "POETRY_VIRTUALENVS_IN_PROJECT";
+            value = "1";
+          }
+          {
+            name = "POETRY_VIRTUALENVS_PREFER_ACTIVE_PYTHON";
+            value = "0";
+          }
+        ];
+
+        devshell.startup.ensure_venv.text = ''
+          (
+            set -euo pipefail
+
+            # Avoid inheriting any foreign venv
+            unset VIRTUAL_ENV PYTHONHOME PYTHONPATH
+
+            if [ -f pyproject.toml ]; then
+              # Always use the python3.11 from THIS devshell
+              PY313="$(command -v python3.13)"
+              PY313_REAL="$(realpath "$PY313")"
+
+              create_or_switch () {
+                echo ">>> Using interpreter: ''${PY313_REAL}"
+                poetry env use "''${PY313_REAL}"
+                poetry sync --with dev
+              }
+
+              if [ ! -d .venv ]; then
+                echo ">>> Creating .venv"
+                create_or_switch
+              else
+                CURRENT="$(realpath .venv/bin/python || true)"
+                if [ "$CURRENT" != "$PY313_REAL" ]; then
+                  echo ">>> Switching venv interpreter to ''${PY313_REAL}"
+                  create_or_switch
+                fi
+              fi
+
+              # Re-sync if lockfile changed
+              if [ ! -e .venv/.poetry.lock.mtime ] || [ poetry.lock -nt .venv/.poetry.lock.mtime ]; then
+                echo ">>> Syncing .venv to poetry.lock"
+                poetry sync --with dev
+                cp -p poetry.lock .venv/.poetry.lock.mtime
+              fi
+
+              # Put venv binaries first
+              export PATH="$PWD/.venv/bin:$PATH"
+            fi
+          )
+        '';
+      };
 
       devShells.py311-pipx = pkgs.devshell.mkShell {
         name = "py311-pipx";
@@ -141,14 +217,17 @@
           coreutils
           gnused
         ];
-        
+
         env = [
-          { name = "POETRY_VERSION"; value = "2.2.1"; }
+          {
+            name = "POETRY_VERSION";
+            value = "2.2.1";
+          }
         ];
 
         devshell.startup.poetry_via_pipx.text = ''
           set -euo pipefail
-          
+
           # Anchor to the active .envrc directory (fallback: current dir if DIRENV_DIR unset)
           ROOT="''${DIRENV_DIR:-$PWD}"
           ROOT="$(cd "$ROOT" && pwd -P)"  # normalize
@@ -232,7 +311,9 @@
 
         packages = with pkgs; [
           javaPackages.compiler.temurin-bin.jdk-25
-          
+
+          pre-commit
+
           # leave this out for now
           # gradle
         ];
@@ -243,7 +324,10 @@
           #{ name = "JAVA_HOME"; value = "${pkgs.jdk21}/lib/openjdk"; }
 
           # Prefer XDG for Gradle cache; falls back in startup script if not set
-          { name = "GRADLE_USER_HOME"; value = "${builtins.getEnv "HOME"}/.local/share/gradle"; }
+          {
+            name = "GRADLE_USER_HOME";
+            value = "${builtins.getEnv "HOME"}/.local/share/gradle";
+          }
         ];
 
         devshell.startup.gradle_home.text = ''
@@ -304,7 +388,7 @@
         #          fi
         #        '';
       };
-  
+
       devShells.tecton = pkgs.devshell.mkShell {
         name = "tools";
 
@@ -315,19 +399,26 @@
           coreutils
           gnused
         ];
-        
+
         env = [
-          { name = "TECTON_VERSION"; value = "1.1.11"; }
+          {
+            name = "TECTON_VERSION";
+            value = "1.1.11";
+          }
         ];
 
         commands = [
-          { name = "path-note"; command = ''echo "PATH += $PIPX_BIN_DIR"''; category = "info"; }
+          {
+            name = "path-note";
+            command = ''echo "PATH += $PIPX_BIN_DIR"'';
+            category = "info";
+          }
         ];
 
         devshell.startup.tecton_via_pipx.text = ''
           set -euo pipefail
 
-          
+
           # Anchor to the active .envrc directory (fallback: current dir if DIRENV_DIR unset)
           ROOT="''${DIRENV_DIR:-$PWD}"
           ROOT="$(cd "$ROOT" && pwd -P)"  # normalize
