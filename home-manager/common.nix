@@ -25,7 +25,6 @@
       asciidoctor
       atuin
       bat
-      claude-code
       eza
       fd # find replacement
       fzf
@@ -49,6 +48,7 @@
       docker-compose
       gh
       git
+      git-spice
       jq
       jqp
       kubectl

@@ -143,6 +143,7 @@
         name = "py313new";
 
         packages = with pkgs; [
+          pre-commit
           python313
           python313Packages.pipx
           semgrep

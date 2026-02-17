@@ -84,7 +84,7 @@
           };
           baseCasks = lib.mkOption {
             type = lib.types.listOf lib.types.str;
-            default = ["ghostty" "visual-studio-code" "1password" "1password-cli"];
+            default = ["claude-code" "codex" "codex-app" "ghostty" "visual-studio-code" "1password" "1password-cli"];
             description = "Base casks for all machines.";
           };
           baseMasApps = lib.mkOption {
@@ -118,7 +118,6 @@
       config = lib.mkIf cfg.enable {
         nix.settings.experimental-features = ["nix-command" "flakes"];
         nix.enable = true;
-
 
         system.stateVersion = 6;
 
