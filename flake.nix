@@ -69,6 +69,12 @@
             default = null; # let nix-darwin pick; set to /opt/homebrew on Apple Silicon if needed
             description = "Homebrew prefix (e.g. /opt/homebrew).";
           };
+          exposedCommands = lib.mkOption {
+            type = lib.types.listOf lib.types.str;
+            default = ["claude" "codex" "op" "ttok"];
+            example = ["codex" "claude" "op"];
+            description = "Allowlisted Homebrew commands to expose via system-profile wrappers.";
+          };
 
           taps = lib.mkOption {
             type = lib.types.listOf lib.types.str;
@@ -115,7 +121,37 @@
         };
       };
 
-      config = lib.mkIf cfg.enable {
+      config = lib.mkIf cfg.enable (let
+        homebrewExposedCommands = lib.unique cfg.homebrew.exposedCommands;
+        defaultBrewPrefix =
+          if pkgs.stdenv.hostPlatform.system == "aarch64-darwin"
+          then "/opt/homebrew"
+          else "/usr/local";
+        effectiveBrewPrefix =
+          if cfg.homebrew.brewPrefix != null
+          then toString cfg.homebrew.brewPrefix
+          else defaultBrewPrefix;
+        brewBinDir = "${effectiveBrewPrefix}/bin";
+        brewCliWrappers = pkgs.runCommandLocal "homebrew-cli-wrappers" {} ''
+          mkdir -p "$out/bin"
+          ${lib.concatMapStringsSep "\n" (cmd: ''
+              cat > "$out/bin/${cmd}" <<'EOF'
+              #!/usr/bin/env bash
+              set -euo pipefail
+
+              target="${brewBinDir}/${cmd}"
+              if [[ ! -x "$target" ]]; then
+                echo "error: expected Homebrew executable not found or not executable: $target" >&2
+                exit 127
+              fi
+
+              exec "$target" "$@"
+              EOF
+              chmod +x "$out/bin/${cmd}"
+            '')
+            homebrewExposedCommands}
+        '';
+      in {
         nix.settings.experimental-features = ["nix-command" "flakes"];
         nix.enable = true;
 
@@ -178,6 +214,17 @@
 
         system.primaryUser = lib.mkDefault cfg.user;
 
+        assertions = [
+          {
+            assertion = lib.all (cmd: builtins.match "^[A-Za-z0-9._+-]+$" cmd != null) cfg.homebrew.exposedCommands;
+            message = "dotfiles.homebrew.exposedCommands must contain command names only (letters, numbers, ., _, +, -).";
+          }
+        ];
+
+        environment.systemPackages = lib.optionals (cfg.homebrew.enable && builtins.length homebrewExposedCommands > 0) [
+          brewCliWrappers
+        ];
+
         # ---------- Homebrew via nix-darwin ----------
         # Only configure if enabled
         homebrew = lib.mkIf cfg.homebrew.enable {
@@ -230,7 +277,7 @@
             };
           };
         };
-      };
+      });
     };
 
     devShells = devshells.devShells;
