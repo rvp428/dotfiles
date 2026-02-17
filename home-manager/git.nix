@@ -10,17 +10,18 @@ in {
   programs.git = {
     enable = lib.mkForce true;
 
-    aliases = {
-      cp = "cherry-pick";
-      cpc = "cherry-pick --continue";
-      cpa = "cherry-pick --abort";
+    settings = {
+      alias = {
+        cp = "cherry-pick";
+        cpc = "cherry-pick --continue";
+        cpa = "cherry-pick --abort";
 
-      rb = "rebase";
-      rbc = "rebase --continue";
-      rba = "rebase --abort";
-    };
+        rb = "rebase";
+        rbc = "rebase --continue";
+        rba = "rebase --abort";
+        meld = "difftool -t meld -y";
+      };
 
-    extraConfig = {
       core.pager = "delta";
       interactive.diffFilter = "delta --color-only";
       pull.rebase = true;
@@ -62,7 +63,5 @@ in {
 
       pager.pager = "less -FRSX";
     };
-
-    aliases.meld = "difftool -t meld -y";
   };
 }

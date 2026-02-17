@@ -1,4 +1,8 @@
-{pkgs, ...}: let
+{
+  config,
+  pkgs,
+  ...
+}: let
   nixFishPlugin = {
     name = "nix.fish";
 
@@ -28,7 +32,10 @@ in {
 
     bash.enable = true;
 
-    zsh.enable = true;
+    zsh = {
+      enable = true;
+      dotDir = config.home.homeDirectory;
+    };
   };
 
   home.sessionVariables = {

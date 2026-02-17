@@ -256,17 +256,20 @@
             "obsidian"
           ];
 
-        home-manager.sharedModules = [
-          nixvim.homeModules.nixvim
-          nix-index-database.homeModules.nix-index
-          (import ./home-manager/unfree.nix)
-          (import ./home-manager/common.nix)
-          (import ./home-manager/git.nix)
-          (import ./home-manager/nvim.nix)
-          (import ./home-manager/shell.nix)
-          (import ./home-manager/poetry.nix)
-          (import ./home-manager/pytools.nix)
-        ];
+        home-manager.sharedModules =
+          lib.optionals (!config.home-manager.useGlobalPkgs) [
+            (import ./home-manager/unfree.nix)
+          ]
+          ++ [
+            nixvim.homeModules.nixvim
+            nix-index-database.homeModules.nix-index
+            (import ./home-manager/common.nix)
+            (import ./home-manager/git.nix)
+            (import ./home-manager/nvim.nix)
+            (import ./home-manager/shell.nix)
+            (import ./home-manager/poetry.nix)
+            (import ./home-manager/pytools.nix)
+          ];
 
         nix = {
           registry = {
