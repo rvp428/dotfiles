@@ -259,13 +259,6 @@
           extraConfig = ''cask_args appdir: "/Applications"'';
         };
 
-        # Make sure unfree configuration applies to the global nixpkgs
-        nixpkgs.config.allowUnfreePredicate = pkg:
-          builtins.elem (lib.getName pkg) [
-            "claude-code"
-            "obsidian"
-          ];
-
         home-manager.sharedModules =
           lib.optionals (!config.home-manager.useGlobalPkgs) [
             (import ./home-manager/unfree.nix)
