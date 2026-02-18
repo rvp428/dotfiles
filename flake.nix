@@ -77,7 +77,7 @@
           };
           exposedCommands = lib.mkOption {
             type = lib.types.listOf lib.types.str;
-            default = ["claude" "codex" "op" "ttok"];
+            default = [];
             example = ["codex" "claude" "op"];
             description = "Allowlisted Homebrew commands to expose via system-profile wrappers.";
           };
@@ -96,7 +96,7 @@
           };
           baseCasks = lib.mkOption {
             type = lib.types.listOf lib.types.str;
-            default = ["claude-code" "codex" "codex-app" "ghostty" "visual-studio-code" "1password" "1password-cli"];
+            default = [];
             description = "Base casks for all machines.";
           };
           baseMasApps = lib.mkOption {
