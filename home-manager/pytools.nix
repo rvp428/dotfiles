@@ -21,7 +21,7 @@ in
     dotfilesDir = lib.mkOption {
       type = lib.types.str;
       default = "${config.home.homeDirectory}/dotfiles";
-      description = "Root directory of your dotfiles; relative script paths are resolved against this.";
+      description = "Root directory of your dotfiles; wrappers should set this explicitly per host, while this default falls back to ~/dotfiles.";
     };
 
     # Function: ps -> [ python packages ]
@@ -79,4 +79,3 @@ in
     }
   ]);
 }
-

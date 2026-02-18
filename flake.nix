@@ -54,6 +54,12 @@
           description = "Login username to attach the Home Manager profile to.";
           example = "raoul";
         };
+        dotfilesDir = lib.mkOption {
+          type = lib.types.nullOr lib.types.str;
+          default = null;
+          description = "Absolute path to the dotfiles checkout on the target machine.";
+          example = "/Users/raoul/dotfiles";
+        };
 
         extraPackages = lib.mkOption {
           type = lib.types.listOf lib.types.package;
@@ -198,6 +204,10 @@
           dotfiles.pytools = {
             enable = true;
             manageXdgBinHome = true;
+            dotfilesDir =
+              if cfg.dotfilesDir != null
+              then cfg.dotfilesDir
+              else "${config.users.users.${cfg.user}.home}/dotfiles";
             pyPkgs = ps: [ps.ruamel-yaml];
             scripts.fold-scalars-yaml = "py/fold_scalars_yaml.py";
           };
