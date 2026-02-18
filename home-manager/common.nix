@@ -2,12 +2,8 @@
   # Home Manager needs a bit of information about you and the paths it should
   # manage.
   home = {
-    username = "raoul";
-    #  home.homeDirectory = lib.mkDefault (
-    #    if pkgs.stdenv.isDarwin
-    #    then "/Users/${config.home.username}"
-    #    else "/home/${config.home.username}";
-    #  );
+    # Username/homeDirectory are intentionally wrapper-owned so shared modules
+    # stay portable across work/personal hosts.
 
     # This value determines the Home Manager release that your configuration is
     # compatible with. This helps avoid breakage when a new Home Manager release
