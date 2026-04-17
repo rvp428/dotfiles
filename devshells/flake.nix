@@ -214,6 +214,102 @@
         '';
       };
 
+      devShells.py313-poetry = pkgs.devshell.mkShell {
+        name = "py313-poetry";
+
+        packages = with pkgs; [
+          python313
+          python313Packages.pipx
+          coreutils
+          gnused
+        ];
+
+        env = [
+          {
+            name = "POETRY_VIRTUALENVS_CREATE";
+            value = "1";
+          }
+          {
+            name = "POETRY_VIRTUALENVS_IN_PROJECT";
+            value = "1";
+          }
+          {
+            name = "POETRY_VIRTUALENVS_PREFER_ACTIVE_PYTHON";
+            value = "0";
+          }
+        ];
+
+        devshell.startup.poetry_via_pipx_no_sync.text = ''
+          set -euo pipefail
+
+          ROOT="''${DIRENV_DIR:-$PWD}"
+          ROOT="$(cd "$ROOT" && pwd -P)"
+
+          export PIPX_HOME="$ROOT/.direnv/pipx"
+          export PIPX_BIN_DIR="$PIPX_HOME/bin"
+          export PATH="$PIPX_BIN_DIR:$PATH"
+          mkdir -p "$PIPX_BIN_DIR"
+
+          if ! command -v poetry >/dev/null 2>&1; then
+            echo ">>> Installing poetry via pipx (Python 3.13 shell)"
+            pipx install poetry --python "$(command -v python3.13)"
+          fi
+
+          # Keep poetry pointed at this shell's Python when invoked manually.
+          if [ -f pyproject.toml ]; then
+            poetry env use "$(command -v python3.13)" >/dev/null 2>&1 || true
+          fi
+        '';
+      };
+
+      devShells.py314-poetry = pkgs.devshell.mkShell {
+        name = "py314-poetry";
+
+        packages = with pkgs; [
+          python314
+          pipx
+          coreutils
+          gnused
+        ];
+
+        env = [
+          {
+            name = "POETRY_VIRTUALENVS_CREATE";
+            value = "1";
+          }
+          {
+            name = "POETRY_VIRTUALENVS_IN_PROJECT";
+            value = "1";
+          }
+          {
+            name = "POETRY_VIRTUALENVS_PREFER_ACTIVE_PYTHON";
+            value = "0";
+          }
+        ];
+
+        devshell.startup.poetry_via_pipx_no_sync.text = ''
+          set -euo pipefail
+
+          ROOT="''${DIRENV_DIR:-$PWD}"
+          ROOT="$(cd "$ROOT" && pwd -P)"
+
+          export PIPX_HOME="$ROOT/.direnv/pipx"
+          export PIPX_BIN_DIR="$PIPX_HOME/bin"
+          export PATH="$PIPX_BIN_DIR:$PATH"
+          mkdir -p "$PIPX_BIN_DIR"
+
+          if ! command -v poetry >/dev/null 2>&1; then
+            echo ">>> Installing poetry via pipx (Python 3.14 shell)"
+            pipx install poetry --python "$(command -v python3.14)"
+          fi
+
+          # Keep poetry pointed at this shell's Python when invoked manually.
+          if [ -f pyproject.toml ]; then
+            poetry env use "$(command -v python3.14)" >/dev/null 2>&1 || true
+          fi
+        '';
+      };
+
       devShells.py311-pipx = pkgs.devshell.mkShell {
         name = "py311-pipx";
 
