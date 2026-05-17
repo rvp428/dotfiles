@@ -50,6 +50,7 @@
       kubectl
       meld
       nix-direnv
+      pre-commit
       yq-go
 
       # Nix logistics -- should these just be devshells also?

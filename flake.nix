@@ -287,5 +287,6 @@
     };
 
     devShells = devshells.devShells;
+    checks = devshells.checks;
   };
 }

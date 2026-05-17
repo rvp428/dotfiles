@@ -1,0 +1,141 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
+repo_root="$(cd "$script_dir/.." && pwd -P)"
+fixture_root="$repo_root/tests/devshells/fixtures"
+tmp_root="${TMPDIR:-/tmp}"
+tmp_root="${tmp_root%/}"
+cleanup_paths=()
+
+cleanup() {
+  local path
+  for path in "${cleanup_paths[@]:-}"; do
+    rm -rf "$path"
+  done
+}
+
+trap cleanup EXIT
+
+usage() {
+  cat <<'EOF'
+Usage: scripts/validate-devshells [py313-poetry] [py314-poetry]
+
+Run direct-Nix runtime validation for the selected devshells.
+If no shells are provided, both Poetry shells are validated.
+EOF
+}
+
+canonical_dir() {
+  (
+    cd "$1"
+    pwd -P
+  )
+}
+
+assert_known_shell() {
+  case "$1" in
+    py313-poetry|py314-poetry) ;;
+    *)
+      echo "error: unsupported shell '$1'" >&2
+      usage >&2
+      exit 1
+      ;;
+  esac
+}
+
+inner_validation_script=$(
+  cat <<'EOF'
+set -euo pipefail
+
+assert_eq() {
+  if [ "$1" != "$2" ]; then
+    echo "assertion failed: $3" >&2
+    echo "  expected: $2" >&2
+    echo "  actual:   $1" >&2
+    exit 1
+  fi
+}
+
+poetry_path="$(command -v poetry)"
+python_path="$(command -v "$EXPECTED_PYTHON")"
+
+poetry --version >/dev/null
+poetry env use "$python_path" >/dev/null
+
+assert_eq "$HOME" "$EXPECTED_HOME" "HOME"
+assert_eq "$XDG_CONFIG_HOME" "$EXPECTED_XDG_CONFIG_HOME" "XDG_CONFIG_HOME"
+assert_eq "$XDG_CACHE_HOME" "$EXPECTED_XDG_CACHE_HOME" "XDG_CACHE_HOME"
+assert_eq "$XDG_DATA_HOME" "$EXPECTED_XDG_DATA_HOME" "XDG_DATA_HOME"
+assert_eq "$poetry_path" "$EXPECTED_POETRY_PATH" "poetry path"
+assert_eq "$(realpath "$PIPX_HOME")" "$(realpath "$EXPECTED_PIPX_HOME")" "PIPX_HOME"
+assert_eq "$(realpath "$(poetry env info --executable)")" "$(realpath "$python_path")" "Poetry interpreter"
+EOF
+)
+
+run_poetry_case() {
+  local shell_name="$1"
+  local expected_python="$2"
+  local fixture_name="$3"
+  local case_root project_dir home_dir config_dir cache_dir data_dir
+
+  case_root="$(mktemp -d "$tmp_root/validate-devshells.XXXXXX")"
+  cleanup_paths+=("$case_root")
+
+  project_dir="$case_root/project"
+  mkdir -p "$project_dir"
+  cp -R "$fixture_root/$fixture_name/." "$project_dir"
+  project_dir="$(canonical_dir "$project_dir")"
+
+  home_dir="$case_root/home"
+  config_dir="$case_root/config"
+  cache_dir="$case_root/cache"
+  data_dir="$case_root/data"
+  mkdir -p "$home_dir" "$config_dir" "$cache_dir" "$data_dir"
+  home_dir="$(canonical_dir "$home_dir")"
+  config_dir="$(canonical_dir "$config_dir")"
+  cache_dir="$(canonical_dir "$cache_dir")"
+  data_dir="$(canonical_dir "$data_dir")"
+
+  echo "==> Validating $shell_name"
+
+  (
+    cd "$project_dir"
+    env -i \
+      HOME="$home_dir" \
+      XDG_CONFIG_HOME="$config_dir" \
+      XDG_CACHE_HOME="$cache_dir" \
+      XDG_DATA_HOME="$data_dir" \
+      EXPECTED_HOME="$home_dir" \
+      EXPECTED_XDG_CONFIG_HOME="$config_dir" \
+      EXPECTED_XDG_CACHE_HOME="$cache_dir" \
+      EXPECTED_XDG_DATA_HOME="$data_dir" \
+      EXPECTED_PIPX_HOME="$project_dir/.direnv/pipx" \
+      EXPECTED_POETRY_PATH="$project_dir/.direnv/pipx/bin/poetry" \
+      EXPECTED_PYTHON="$expected_python" \
+      PATH="$PATH" \
+      nix develop "$repo_root#$shell_name" --command bash -c "$inner_validation_script"
+  )
+}
+
+selected_shells=("$@")
+if [ "${#selected_shells[@]}" -eq 0 ]; then
+  selected_shells=(py314-poetry py313-poetry)
+fi
+
+for shell_name in "${selected_shells[@]}"; do
+  assert_known_shell "$shell_name"
+done
+
+for shell_name in "${selected_shells[@]}"; do
+  case "$shell_name" in
+    py313-poetry)
+      run_poetry_case "$shell_name" "python3.13" "poetry-minimal-313"
+      ;;
+    py314-poetry)
+      run_poetry_case "$shell_name" "python3.14" "poetry-minimal-314"
+      ;;
+  esac
+done
+
+echo "All selected devshell validations passed."

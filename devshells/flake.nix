@@ -23,7 +23,7 @@
     ] (system: let
       overlays = [devshell.overlays.default];
       pkgs = import nixpkgs {inherit system overlays;};
-    in {
+    in rec {
       devShells.py311 = pkgs.devshell.mkShell {
         name = "py311";
 
@@ -563,6 +563,18 @@
           echo ">>> tecton at: $(command -v tecton)"
           tecton version || true
         '';
+      };
+
+      checks = {
+        py311 = devShells.py311;
+        py311new = devShells.py311new;
+        py313new = devShells.py313new;
+        py313-poetry = devShells.py313-poetry;
+        py314-poetry = devShells.py314-poetry;
+        py311-pipx = devShells.py311-pipx;
+        npx = devShells.npx;
+        java25 = devShells.java25;
+        tecton = devShells.tecton;
       };
 
       formatter = pkgs.alejandra;

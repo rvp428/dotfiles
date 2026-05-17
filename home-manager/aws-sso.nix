@@ -6,25 +6,30 @@ let
   # Render AWS config from sessions + profiles
   renderAwsConfig = sessions: profiles:
     let
-      sessionBlock = s: ''
-        [sso-session ${s.name}]
-        sso_start_url = ${s.startUrl}
-        sso_region = ${s.region}
-        ${lib.optionalString (s.registrationScopes != null) "sso_registration_scopes = ${s.registrationScopes}"}
-      '';
-      profileBlock = p: ''
-        [profile ${p.name}]
-        sso_session = ${p.ssoSessionName}
-        sso_start_url = ${p.startUrl}
-        sso_account_id = ${p.accountId}
-        sso_role_name = ${p.role}
-        sso_region = ${p.region}
-        ${lib.optionalString p.useCredentialProcess "credential_process = ${if p.credentialProcessCmd != null then p.credentialProcessCmd else "aws-sso-util credential-process --profile ${p.name}"}"}
-      '';
+      sessionBlock = s:
+        lib.concatStringsSep "\n" ([
+            "[sso-session ${s.name}]"
+            "sso_start_url = ${s.startUrl}"
+            "sso_region = ${s.region}"
+          ]
+          ++ lib.optional (s.registrationScopes != null) "sso_registration_scopes = ${s.registrationScopes}");
+      profileBlock = p:
+        lib.concatStringsSep "\n" ([
+            "[profile ${p.name}]"
+            "sso_session = ${p.ssoSessionName}"
+          ]
+          ++ lib.optional (p.startUrl != null) "sso_start_url = ${p.startUrl}"
+          ++ [
+            "sso_account_id = ${p.accountId}"
+            "sso_role_name = ${p.role}"
+            "region = ${p.region}"
+          ]
+          ++ lib.optional p.useCredentialProcess "credential_process = ${if p.credentialProcessCmd != null then p.credentialProcessCmd else "aws-sso-util credential-process --profile ${p.name}"}");
     in
     lib.concatStringsSep "\n\n"
       (map sessionBlock sessions ++ map profileBlock profiles
-        ++ lib.optional (cfg.extraConfig != "") cfg.extraConfig);
+        ++ lib.optional (cfg.extraConfig != "") cfg.extraConfig)
+    + "\n";
 
   # Build Docker credHelpers JSON for ECR
   dockerConfigJson =
@@ -86,7 +91,7 @@ in
         options = {
           name = lib.mkOption { type = lib.types.str; };
           ssoSessionName = lib.mkOption { type = lib.types.str; };
-          startUrl = lib.mkOption { type = lib.types.str; };
+          startUrl = lib.mkOption { type = lib.types.nullOr lib.types.str; default = null; };
           accountId = lib.mkOption { type = lib.types.str; };
           role = lib.mkOption { type = lib.types.str; };
           region = lib.mkOption { type = lib.types.str; };
@@ -170,4 +175,3 @@ in
     };
   };
 }
-
