@@ -23,6 +23,12 @@
     ] (system: let
       overlays = [devshell.overlays.default];
       pkgs = import nixpkgs {inherit system overlays;};
+      pipxNoCheck = pythonPackages:
+        pythonPackages.pipx.overridePythonAttrs (_: {
+          doCheck = false;
+        });
+      pipx311 = pipxNoCheck pkgs.python311Packages;
+      pipx313 = pipxNoCheck pkgs.python313Packages;
     in rec {
       devShells.py311 = pkgs.devshell.mkShell {
         name = "py311";
@@ -145,7 +151,7 @@
         packages = with pkgs; [
           pre-commit
           python313
-          python313Packages.pipx
+          pipx313
           semgrep
           openapi-generator-cli
         ];
@@ -219,7 +225,7 @@
 
         packages = with pkgs; [
           python313
-          python313Packages.pipx
+          pipx313
           coreutils
           gnused
         ];
@@ -267,7 +273,7 @@
 
         packages = with pkgs; [
           python314
-          pipx
+          pipx313
           coreutils
           gnused
         ];
@@ -316,7 +322,7 @@
         packages = with pkgs; [
           pre-commit
           python311
-          python311Packages.pipx
+          pipx311
           coreutils
           gnused
         ];
@@ -385,7 +391,7 @@
       devShells.npx = pkgs.devshell.mkShell {
         name = "npx";
         packages = with pkgs; [
-          nodejs_20
+          nodejs
           openapi-generator-cli
           git
           coreutils
@@ -498,7 +504,7 @@
         packages = with pkgs; [
           pre-commit
           python311
-          python311Packages.pipx
+          pipx311
           coreutils
           gnused
         ];

@@ -11,7 +11,6 @@
     devshells.inputs.nixpkgs.follows = "nixpkgs";
 
     nixvim.url = "github:nix-community/nixvim";
-    nixvim.inputs.nixpkgs.follows = "nixpkgs";
     nix-index-database.url = "github:nix-community/nix-index-database";
     nix-index-database.inputs.nixpkgs.follows = "nixpkgs";
   };
@@ -120,8 +119,8 @@
           };
 
           cleanupMode = lib.mkOption {
-            type = lib.types.enum ["none" "uninstall" "zap"];
-            default = "uninstall";
+            type = lib.types.enum ["none" "check" "uninstall" "zap"];
+            default = "check";
             description = "Cleanup behavior on activation.";
           };
         };
@@ -265,6 +264,9 @@
           ]
           ++ [
             nixvim.homeModules.nixvim
+            ({...}: {
+              programs.nixvim.nixpkgs.source = nixvim.inputs.nixpkgs;
+            })
             nix-index-database.homeModules.nix-index
             (import ./home-manager/common.nix)
             (import ./home-manager/git.nix)
