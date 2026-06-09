@@ -1,4 +1,8 @@
-{pkgs, ...}: {
+{
+  lib,
+  pkgs,
+  ...
+}: {
   # Home Manager needs a bit of information about you and the paths it should
   # manage.
   home = {
@@ -12,7 +16,7 @@
     # You should not change this value, even if you update Home Manager. If you do
     # want to update the value, then make sure to first check the Home Manager
     # release notes.
-    stateVersion = "25.05"; # Please read the comment before changing.
+    stateVersion = "25.11"; # Please read the comment before changing.
 
     # The home.packages option allows you to install Nix packages into your
     # environment.
@@ -61,6 +65,13 @@
     ];
 
     file."Library/Fonts/Nix/IosevkaTerm".source = "${pkgs.iosevka-bin.override {variant = "SGr-IosevkaTerm";}}/share/fonts/truetype";
+  };
+
+  targets = lib.mkIf pkgs.stdenv.hostPlatform.isDarwin {
+    darwin = {
+      copyApps.enable = true;
+      linkApps.enable = false;
+    };
   };
 
   programs = {
