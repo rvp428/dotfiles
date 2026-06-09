@@ -72,7 +72,7 @@
         homebrew = {
           enable = lib.mkEnableOption "Enable Homebrew management via nix-darwin";
 
-          brewPrefix = lib.mkOption {
+          prefix = lib.mkOption {
             type = lib.types.nullOr lib.types.path;
             default = null; # let nix-darwin pick; set to /opt/homebrew on Apple Silicon if needed
             description = "Homebrew prefix (e.g. /opt/homebrew).";
@@ -136,8 +136,8 @@
           then "/opt/homebrew"
           else "/usr/local";
         effectiveBrewPrefix =
-          if cfg.homebrew.brewPrefix != null
-          then toString cfg.homebrew.brewPrefix
+          if cfg.homebrew.prefix != null
+          then toString cfg.homebrew.prefix
           else defaultBrewPrefix;
         brewBinDir = "${effectiveBrewPrefix}/bin";
         brewCliWrappers = pkgs.runCommandLocal "homebrew-cli-wrappers" {} ''
@@ -242,9 +242,9 @@
         homebrew = lib.mkIf cfg.homebrew.enable {
           enable = true;
 
-          # Set brewPrefix only when provided
+          # Set prefix only when provided
           # (avoids overriding nix-darwin's defaults)
-          brewPrefix = lib.mkIf (cfg.homebrew.brewPrefix != null) cfg.homebrew.brewPrefix;
+          prefix = lib.mkIf (cfg.homebrew.prefix != null) cfg.homebrew.prefix;
 
           taps = cfg.homebrew.taps;
 
