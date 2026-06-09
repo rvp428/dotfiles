@@ -23,21 +23,7 @@
     devshells,
     nix-index-database,
     ...
-  }: let
-    hmModules = {
-      unfree = ./home-manager/unfree.nix;
-      common = ./home-manager/common.nix;
-      git = ./home-manager/git.nix;
-      nvim = ./home-manager/nvim.nix;
-      shell = ./home-manager/shell.nix;
-      poetry = ./home-manager/poetry.nix;
-      pytools = ./home-manager/pytools.nix;
-      # nixvim lives in the nixvim input
-    };
-  in {
-    # Export your HM modules so others can import them
-    inherit hmModules;
-
+  }: {
     # Export a nix-darwin module that carries your macOS defaults + HM wiring.
     darwinModules.base = {
       lib,
