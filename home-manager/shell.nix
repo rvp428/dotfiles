@@ -34,7 +34,7 @@ in {
 
     zsh = {
       enable = true;
-      dotDir = config.home.homeDirectory;
+      dotDir = "${config.xdg.configHome}/zsh";
     };
   };
 
