@@ -163,7 +163,7 @@
         nix.settings.experimental-features = ["nix-command" "flakes"];
         nix.enable = true;
 
-        system.stateVersion = 6;
+        system.stateVersion = 7;
 
         system.defaults = {
           # Enable function keys without fn key
