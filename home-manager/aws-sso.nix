@@ -118,6 +118,11 @@ in
     installFishFunctions = lib.mkOption {
       type = lib.types.bool; default = true;
     };
+
+    # Optional zsh helpers
+    installZshFunctions = lib.mkOption {
+      type = lib.types.bool; default = true;
+    };
   };
 
   config = lib.mkIf cfg.enable {
@@ -172,6 +177,12 @@ in
           aws ecr get-login-password --region $REGION | docker login --username AWS --password-stdin $REG
         '';
       };
+    };
+
+    # Zsh helpers
+    programs.zsh = lib.mkIf cfg.installZshFunctions {
+      enable = true;
+      initContent = builtins.readFile ../zsh/aws-sso.zsh;
     };
   };
 }
