@@ -25,7 +25,29 @@
     devshells,
     nix-index-database,
     ...
-  }: {
+  }: let
+    systems = [
+      "x86_64-linux"
+      "aarch64-linux"
+      "aarch64-darwin"
+    ];
+    forAllSystems = nixpkgs.lib.genAttrs systems;
+  in {
+    formatter = forAllSystems (system: let
+      pkgs = nixpkgs.legacyPackages.${system};
+    in
+      pkgs.writeShellApplication {
+        name = "alejandra-format";
+        runtimeInputs = [pkgs.alejandra];
+        text = ''
+          if [ "$#" -eq 0 ]; then
+            exec alejandra .
+          fi
+
+          exec alejandra "$@"
+        '';
+      });
+
     # Export a nix-darwin module that carries your macOS defaults + HM wiring.
     darwinModules.base = {
       lib,

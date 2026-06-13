@@ -582,6 +582,16 @@
         tecton = devShells.tecton;
       };
 
-      formatter = pkgs.alejandra;
+      formatter = pkgs.writeShellApplication {
+        name = "alejandra-format";
+        runtimeInputs = [pkgs.alejandra];
+        text = ''
+          if [ "$#" -eq 0 ]; then
+            exec alejandra .
+          fi
+
+          exec alejandra "$@"
+        '';
+      };
     });
 }
