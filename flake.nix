@@ -221,12 +221,13 @@
         };
 
         programs.fish.enable = true;
-        environment.shells = [pkgs.fish];
+        programs.zsh.enable = true;
+        environment.shells = [pkgs.fish pkgs.zsh];
 
         # Reasonable default home path on macOS (override from wrapper if needed)
         users.users.${cfg.user} = {
           home = lib.mkDefault "/Users/${cfg.user}";
-          shell = pkgs.fish;
+          shell = pkgs.zsh;
         };
 
         system.primaryUser = lib.mkDefault cfg.user;
