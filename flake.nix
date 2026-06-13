@@ -112,6 +112,11 @@
             default = "check";
             description = "Cleanup behavior on activation.";
           };
+          globalBrewfile = lib.mkOption {
+            type = lib.types.bool;
+            default = true;
+            description = "Expose the nix-darwin generated Brewfile to manual brew bundle commands.";
+          };
         };
       };
 
@@ -126,6 +131,7 @@
           then toString cfg.homebrew.prefix
           else defaultBrewPrefix;
         brewBinDir = "${effectiveBrewPrefix}/bin";
+        brewfileFile = pkgs.writeText "Brewfile" config.homebrew.brewfile;
         brewCliWrappers = pkgs.runCommandLocal "homebrew-cli-wrappers" {} ''
           mkdir -p "$out/bin"
           ${lib.concatMapStringsSep "\n" (cmd: ''
@@ -241,11 +247,43 @@
           onActivation = {
             autoUpdate = true;
             upgrade = true;
-            cleanup = cfg.homebrew.cleanupMode;
+            cleanup =
+              if cfg.homebrew.cleanupMode == "check"
+              then "none"
+              else cfg.homebrew.cleanupMode;
           };
+
+          global.brewfile = cfg.homebrew.globalBrewfile;
 
           extraConfig = ''cask_args appdir: "/Applications"'';
         };
+
+        system.checks.text = lib.mkIf (cfg.homebrew.enable && cfg.homebrew.cleanupMode == "check") ''
+          if [ -f "${config.homebrew.prefix}/bin/brew" ]; then
+            homebrewCleanupExitCode=0
+            homebrewCleanupResult=$(PATH="${config.homebrew.prefix}/bin:${lib.makeBinPath [pkgs.mas]}:$PATH" \
+              sudo \
+                --preserve-env=PATH \
+                --user=${lib.escapeShellArg config.homebrew.user} \
+                --set-home \
+                env HOMEBREW_NO_AUTO_UPDATE=1 \
+                brew bundle cleanup --file='${brewfileFile}' 2>&1) || homebrewCleanupExitCode=$?
+            if [ "$homebrewCleanupExitCode" -eq 1 ]; then
+              printf >&2 '\e[1;31merror: found Homebrew packages not listed in the Brewfile, aborting activation\e[0m\n'
+              printf >&2 '%s\n' "$homebrewCleanupResult"
+              printf >&2 '\n'
+              printf >&2 'To fix this, either:\n'
+              printf >&2 '  - Add the listed packages to your nix-darwin Homebrew configuration\n'
+              printf >&2 '  - Remove them by running: ${config.homebrew.prefix}/bin/brew bundle cleanup --file=${lib.escapeShellArg brewfileFile} --force\n'
+              printf >&2 '  - Set dotfiles.homebrew.cleanupMode to "uninstall" or "zap"\n'
+              exit 2
+            elif [ "$homebrewCleanupExitCode" -ne 0 ]; then
+              printf >&2 '\e[1;31merror: brew bundle cleanup failed, aborting activation\e[0m\n'
+              printf >&2 '%s\n' "$homebrewCleanupResult"
+              exit 2
+            fi
+          fi
+        '';
 
         home-manager.sharedModules =
           lib.optionals (!config.home-manager.useGlobalPkgs) [
