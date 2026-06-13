@@ -3,6 +3,7 @@
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
+    nixpkgs-master.url = "github:NixOS/nixpkgs/master";
 
     nix-darwin.url = "github:nix-darwin/nix-darwin/master";
     nix-darwin.inputs.nixpkgs.follows = "nixpkgs";
@@ -20,6 +21,7 @@
 
   outputs = {
     nixpkgs,
+    nixpkgs-master,
     devshells,
     nix-index-database,
     ...
@@ -33,6 +35,17 @@
       ...
     }: let
       cfg = config.dotfiles;
+      codexPkgs = import nixpkgs-master {
+        system = pkgs.stdenv.hostPlatform.system;
+        config.allowUnfreePredicate = pkg:
+          builtins.elem (lib.getName pkg) [
+            "claude-code"
+          ];
+      };
+      codexPackages = with codexPkgs; [
+        claude-code
+        codex
+      ];
     in {
       # Make the module configurable by the wrapper
       options.dotfiles = {
@@ -193,7 +206,7 @@
         # HM integration
 
         home-manager.users.${cfg.user} = {...}: {
-          home.packages = cfg.extraPackages;
+          home.packages = codexPackages ++ cfg.extraPackages;
 
           dotfiles.pytools = {
             enable = true;
