@@ -1,7 +1,9 @@
 # home.nix
-{ config, pkgs, ... }:
-
 {
+  config,
+  pkgs,
+  ...
+}: {
   xdg.configFile."pypoetry/config.toml".text = ''
     [virtualenvs]
     create = true
@@ -26,4 +28,3 @@
   #    };
   #  };
 }
-

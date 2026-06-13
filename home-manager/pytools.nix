@@ -1,5 +1,9 @@
-{ config, lib, pkgs, ... }:
-let
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}: let
   cfg = config.dotfiles.pytools;
 
   # Python for tools = whatever python3 is in your pinned nixpkgs
@@ -7,13 +11,14 @@ let
 
   # Resolve absolute vs relative script paths
   mkScriptPath = path:
-    if lib.hasPrefix "/" path then path else "${cfg.dotfilesDir}/${path}";
+    if lib.hasPrefix "/" path
+    then path
+    else "${cfg.dotfilesDir}/${path}";
 
   # Safe default for XDG_BIN_HOME if not defined elsewhere
   defaultBin = "${config.home.homeDirectory}/.local/bin";
-  xdgBin = (config.home.sessionVariables.XDG_BIN_HOME or defaultBin);
-in
-{
+  xdgBin = config.home.sessionVariables.XDG_BIN_HOME or defaultBin;
+in {
   options.dotfiles.pytools = {
     enable = lib.mkEnableOption "Expose dotfiles Python tools via a pinned python3 env";
 
@@ -27,16 +32,16 @@ in
     # Function: ps -> [ python packages ]
     pyPkgs = lib.mkOption {
       type = lib.types.functionTo (lib.types.listOf lib.types.package);
-      default = (ps: [ ps.ruamel-yaml ]);
-      example = (ps: [ ps.ruamel-yaml ps.rich ]);
+      default = ps: [ps.ruamel-yaml];
+      example = ps: [ps.ruamel-yaml ps.rich];
       description = "Python packages to include in python3.withPackages.";
     };
 
     # name -> script path (absolute or relative to dotfilesDir)
     scripts = lib.mkOption {
       type = lib.types.attrsOf lib.types.str;
-      default = { };
-      example = { "fold-scalars-yaml" = "py/fold_scalars_yaml.py"; };
+      default = {};
+      example = {"fold-scalars-yaml" = "py/fold_scalars_yaml.py";};
       description = "CLI shims created in $XDG_BIN_HOME that invoke your scripts with the pinned python3.";
     };
 
@@ -52,18 +57,18 @@ in
     (lib.mkIf cfg.manageXdgBinHome {
       xdg.enable = true;
       home.sessionVariables.XDG_BIN_HOME = lib.mkDefault defaultBin;
-      home.sessionPath = [ "$XDG_BIN_HOME" ];
-      home.activation.ensureXdgBinHome =
-        lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-          mkdir -p ${xdgBin}
-        '';
+      home.sessionPath = ["$XDG_BIN_HOME"];
+      home.activation.ensureXdgBinHome = lib.hm.dag.entryAfter ["writeBoundary"] ''
+        mkdir -p ${xdgBin}
+      '';
     })
     {
       # Put the interpreter on PATH (fast; no nix-shell)
-      home.packages = [ py ];
+      home.packages = [py];
 
       # One tiny shim per script into $XDG_BIN_HOME
-      home.file = lib.mapAttrs'
+      home.file =
+        lib.mapAttrs'
         (name: relOrAbs: {
           name = "${xdgBin}/${name}";
           value = {

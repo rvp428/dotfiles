@@ -1,73 +1,82 @@
-{ config, lib, pkgs, ... }:
-
-let
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}: let
   cfg = config.dotfiles.aws;
 
   # Render AWS config from sessions + profiles
-  renderAwsConfig = sessions: profiles:
-    let
-      sessionBlock = s:
-        lib.concatStringsSep "\n" ([
-            "[sso-session ${s.name}]"
-            "sso_start_url = ${s.startUrl}"
-            "sso_region = ${s.region}"
-          ]
-          ++ lib.optional (s.registrationScopes != null) "sso_registration_scopes = ${s.registrationScopes}");
-      profileBlock = p:
-        lib.concatStringsSep "\n" ([
-            "[profile ${p.name}]"
-            "sso_session = ${p.ssoSessionName}"
-          ]
-          ++ lib.optional (p.startUrl != null) "sso_start_url = ${p.startUrl}"
-          ++ [
-            "sso_account_id = ${p.accountId}"
-            "sso_role_name = ${p.role}"
-            "region = ${p.region}"
-          ]
-          ++ lib.optional p.useCredentialProcess "credential_process = ${if p.credentialProcessCmd != null then p.credentialProcessCmd else "aws-sso-util credential-process --profile ${p.name}"}");
-    in
+  renderAwsConfig = sessions: profiles: let
+    sessionBlock = s:
+      lib.concatStringsSep "\n" ([
+          "[sso-session ${s.name}]"
+          "sso_start_url = ${s.startUrl}"
+          "sso_region = ${s.region}"
+        ]
+        ++ lib.optional (s.registrationScopes != null) "sso_registration_scopes = ${s.registrationScopes}");
+    profileBlock = p:
+      lib.concatStringsSep "\n" ([
+          "[profile ${p.name}]"
+          "sso_session = ${p.ssoSessionName}"
+        ]
+        ++ lib.optional (p.startUrl != null) "sso_start_url = ${p.startUrl}"
+        ++ [
+          "sso_account_id = ${p.accountId}"
+          "sso_role_name = ${p.role}"
+          "region = ${p.region}"
+        ]
+        ++ lib.optional p.useCredentialProcess "credential_process = ${
+          if p.credentialProcessCmd != null
+          then p.credentialProcessCmd
+          else "aws-sso-util credential-process --profile ${p.name}"
+        }");
+  in
     lib.concatStringsSep "\n\n"
-      (map sessionBlock sessions ++ map profileBlock profiles
-        ++ lib.optional (cfg.extraConfig != "") cfg.extraConfig)
+    (map sessionBlock sessions
+      ++ map profileBlock profiles
+      ++ lib.optional (cfg.extraConfig != "") cfg.extraConfig)
     + "\n";
 
   # Build Docker credHelpers JSON for ECR
-  dockerConfigJson =
-    let
-      pairs = lib.listToAttrs (map
-        (r: {
-          name = "${r.accountId}.dkr.ecr.${r.region}.amazonaws.com";
-          value = "ecr-login";
-        })
-        cfg.ecrRegistries);
-    in
-    builtins.toJSON { credHelpers = pairs; };
-in
-{
+  dockerConfigJson = let
+    pairs = lib.listToAttrs (map
+      (r: {
+        name = "${r.accountId}.dkr.ecr.${r.region}.amazonaws.com";
+        value = "ecr-login";
+      })
+      cfg.ecrRegistries);
+  in
+    builtins.toJSON {credHelpers = pairs;};
+in {
   options.dotfiles.aws = {
     enable = lib.mkEnableOption "AWS SSO + ECR helpers via Home Manager";
 
     # Install tooling
     installPackages = lib.mkOption {
-      type = lib.types.bool; default = true;
+      type = lib.types.bool;
+      default = true;
       description = "Install awscli2, aws-sso-util (via pipx), docker-credential-ecr-login, jq";
     };
 
     # Manage ~/.aws/config (single, composed file from below lists)
     manageAwsConfig = lib.mkOption {
-      type = lib.types.bool; default = true;
+      type = lib.types.bool;
+      default = true;
       description = "Write ~/.aws/config from sessions and profiles.";
     };
 
     # Optional: manage ~/.docker/config.json credHelpers for ECR
     manageDockerConfig = lib.mkOption {
-      type = lib.types.bool; default = false;
+      type = lib.types.bool;
+      default = false;
       description = "Write ~/.docker/config.json with ECR credential helpers.";
     };
 
     # Extra literal text appended to ~/.aws/config (optional)
     extraConfig = lib.mkOption {
-      type = lib.types.str; default = "";
+      type = lib.types.str;
+      default = "";
       description = "Literal extra text to append to ~/.aws/config.";
     };
 
@@ -75,10 +84,13 @@ in
     ssoSessions = lib.mkOption {
       type = lib.types.listOf (lib.types.submodule {
         options = {
-          name = lib.mkOption { type = lib.types.str; };
-          startUrl = lib.mkOption { type = lib.types.str; };
-          region = lib.mkOption { type = lib.types.str; };
-          registrationScopes = lib.mkOption { type = lib.types.nullOr lib.types.str; default = "sso:account:access"; };
+          name = lib.mkOption {type = lib.types.str;};
+          startUrl = lib.mkOption {type = lib.types.str;};
+          region = lib.mkOption {type = lib.types.str;};
+          registrationScopes = lib.mkOption {
+            type = lib.types.nullOr lib.types.str;
+            default = "sso:account:access";
+          };
         };
       });
       default = [];
@@ -89,14 +101,23 @@ in
     profiles = lib.mkOption {
       type = lib.types.listOf (lib.types.submodule {
         options = {
-          name = lib.mkOption { type = lib.types.str; };
-          ssoSessionName = lib.mkOption { type = lib.types.str; };
-          startUrl = lib.mkOption { type = lib.types.nullOr lib.types.str; default = null; };
-          accountId = lib.mkOption { type = lib.types.str; };
-          role = lib.mkOption { type = lib.types.str; };
-          region = lib.mkOption { type = lib.types.str; };
-          useCredentialProcess = lib.mkOption { type = lib.types.bool; default = true; };
-          credentialProcessCmd = lib.mkOption { type = lib.types.nullOr lib.types.str; default = null; };
+          name = lib.mkOption {type = lib.types.str;};
+          ssoSessionName = lib.mkOption {type = lib.types.str;};
+          startUrl = lib.mkOption {
+            type = lib.types.nullOr lib.types.str;
+            default = null;
+          };
+          accountId = lib.mkOption {type = lib.types.str;};
+          role = lib.mkOption {type = lib.types.str;};
+          region = lib.mkOption {type = lib.types.str;};
+          useCredentialProcess = lib.mkOption {
+            type = lib.types.bool;
+            default = true;
+          };
+          credentialProcessCmd = lib.mkOption {
+            type = lib.types.nullOr lib.types.str;
+            default = null;
+          };
         };
       });
       default = [];
@@ -107,8 +128,8 @@ in
     ecrRegistries = lib.mkOption {
       type = lib.types.listOf (lib.types.submodule {
         options = {
-          accountId = lib.mkOption { type = lib.types.str; };
-          region = lib.mkOption { type = lib.types.str; };
+          accountId = lib.mkOption {type = lib.types.str;};
+          region = lib.mkOption {type = lib.types.str;};
         };
       });
       default = [];
@@ -116,17 +137,18 @@ in
 
     # Optional fish helpers
     installFishFunctions = lib.mkOption {
-      type = lib.types.bool; default = true;
+      type = lib.types.bool;
+      default = true;
     };
 
     # Optional zsh helpers
     installZshFunctions = lib.mkOption {
-      type = lib.types.bool; default = true;
+      type = lib.types.bool;
+      default = true;
     };
   };
 
   config = lib.mkIf cfg.enable {
-
     # Tooling
     home.packages = lib.mkIf cfg.installPackages (with pkgs; [
       amazon-ecr-credential-helper

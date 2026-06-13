@@ -12,18 +12,21 @@
   envNames = lib.attrNames cfg.environments;
   reservedCommands = ["ecr" "envs" "help" "k" "login" "pods" "psql" "who"];
 
-  renderAssoc = name: attr:
-    ''
-      typeset -gA ${name}=(
-      ${lib.concatMapStringsSep "\n" (env: "  ${q env} ${q cfg.environments.${env}.${attr}}") envNames}
-      )
-    '';
+  renderAssoc = name: attr: ''
+    typeset -gA ${name}=(
+    ${lib.concatMapStringsSep "\n" (env: "  ${q env} ${q cfg.environments.${env}.${attr}}") envNames}
+    )
+  '';
 
   opsZsh = ''
     typeset -ga DOTFILES_OPS_ENV_NAMES=( ${lib.concatMapStringsSep " " q envNames} )
     typeset -g DOTFILES_OPS_DEFAULT_AWS_PROFILE=${q (nullable cfg.defaultAwsProfile)}
     typeset -g DOTFILES_OPS_ECR_ACCOUNT_ID=${q (nullable cfg.ecrAccountId)}
-    typeset -g DOTFILES_OPS_PSQL_ENABLED=${q (if cfg.psql.enable then "1" else "0")}
+    typeset -g DOTFILES_OPS_PSQL_ENABLED=${q (
+      if cfg.psql.enable
+      then "1"
+      else "0"
+    )}
     typeset -g DOTFILES_OPS_PSQL_SECRET=${q cfg.psql.secretName}
     typeset -g DOTFILES_OPS_PSQL_DEPLOYMENT=${q cfg.psql.deploymentName}
     typeset -g DOTFILES_OPS_PSQL_DATABASE=${q cfg.psql.databaseName}
