@@ -131,10 +131,12 @@
   };
 
   # 2) Ghostty config
-  xdg.enable = true;
-  xdg.userDirs.setSessionVariables = false;
-  xdg.configFile."ghostty/config".text = ''
-    font-family = Iosevka Term
-    font-size = 14
-  '';
+  xdg = {
+    enable = true;
+    userDirs.setSessionVariables = false;
+    configFile."ghostty/config".text = ''
+      font-family = Iosevka Term
+      font-size = 14
+    '';
+  };
 }

@@ -570,17 +570,26 @@
         '';
       };
 
-      checks = {
-        py311 = devShells.py311;
-        py311new = devShells.py311new;
-        py313new = devShells.py313new;
-        py313-poetry = devShells.py313-poetry;
-        py314-poetry = devShells.py314-poetry;
-        py311-pipx = devShells.py311-pipx;
-        npx = devShells.npx;
-        java25 = devShells.java25;
-        tecton = devShells.tecton;
-      };
+      checks =
+        {
+          inherit
+            (devShells)
+            py311
+            py311new
+            py313new
+            npx
+            java25
+            tecton
+            ;
+        }
+        // {
+          inherit
+            (devShells)
+            py313-poetry
+            py314-poetry
+            py311-pipx
+            ;
+        };
 
       formatter = pkgs.writeShellApplication {
         name = "alejandra-format";

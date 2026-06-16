@@ -187,47 +187,60 @@
             homebrewExposedCommands}
         '';
       in {
-        nix.settings.experimental-features = ["nix-command" "flakes"];
-        nix.enable = true;
+        nix = {
+          enable = true;
+          settings.experimental-features = ["nix-command" "flakes"];
 
-        system.stateVersion = 7;
-
-        system.defaults = {
-          # Enable function keys without fn key
-          NSGlobalDomain = {
-            "com.apple.keyboard.fnState" = true;
-
-            # Some of the beeps
-            "com.apple.sound.beep.volume" = 0.0;
+          registry = {
+            nixpkgs.flake = nixpkgs;
+            "raoul-dotfiles".to = {
+              type = "path";
+              path = "${config.users.users.${cfg.user}.home}/dotfiles";
+            };
           };
-          menuExtraClock = {
-            IsAnalog = false;
-            Show24Hour = true;
-            ShowDate = 0; # 0 = When space allows 1 = Always 2 = Never
-          };
-
-          controlcenter.Bluetooth = true;
         };
-        system.defaults.CustomUserPreferences = {
-          "com.apple.symbolichotkeys" = {
-            AppleSymbolicHotKeys = {
-              "36" = {enabled = false;};
+
+        system = {
+          stateVersion = 7;
+
+          defaults = {
+            # Enable function keys without fn key
+            NSGlobalDomain = {
+              "com.apple.keyboard.fnState" = true;
+
+              # Some of the beeps
+              "com.apple.sound.beep.volume" = 0.0;
+            };
+            menuExtraClock = {
+              IsAnalog = false;
+              Show24Hour = true;
+              ShowDate = 0; # 0 = When space allows 1 = Always 2 = Never
+            };
+
+            controlcenter.Bluetooth = true;
+
+            CustomUserPreferences = {
+              "com.apple.symbolichotkeys" = {
+                AppleSymbolicHotKeys = {
+                  "36" = {enabled = false;};
+                };
+              };
+
+              "com.microsoft.VSCode" = {ApplePressAndHoldEnabled = false;};
             };
           };
 
-          "com.microsoft.VSCode" = {ApplePressAndHoldEnabled = false;};
+          # Removing remaining beeps
+          activationScripts.soundPrefs.text = ''
+            /usr/bin/defaults write -g com.apple.sound.uiaudio.enabled -bool false
+            /usr/bin/killall cfprefsd 2>/dev/null || true
+            /usr/bin/killall SystemUIServer 2>/dev/null || true
+          '';
         };
-
-        # Removing remaining beeps
-        system.activationScripts.soundPrefs.text = ''
-          /usr/bin/defaults write -g com.apple.sound.uiaudio.enabled -bool false
-          /usr/bin/killall cfprefsd 2>/dev/null || true
-          /usr/bin/killall SystemUIServer 2>/dev/null || true
-        '';
 
         # HM integration
 
-        home-manager.users.${cfg.user} = {...}: {
+        home-manager.users.${cfg.user} = _: {
           home.packages = codexPackages ++ cfg.extraPackages;
 
           dotfiles.pytools = {
@@ -327,7 +340,7 @@
           ]
           ++ [
             nixvim.homeModules.nixvim
-            ({...}: {
+            (_: {
               programs.nixvim.nixpkgs.source = nixvim.inputs.nixpkgs;
             })
             nix-index-database.homeModules.nix-index
@@ -338,20 +351,9 @@
             (import ./home-manager/poetry.nix)
             (import ./home-manager/pytools.nix)
           ];
-
-        nix = {
-          registry = {
-            nixpkgs.flake = nixpkgs;
-            "raoul-dotfiles".to = {
-              type = "path";
-              path = "${config.users.users.${cfg.user}.home}/dotfiles";
-            };
-          };
-        };
       });
     };
 
-    devShells = devshells.devShells;
-    checks = devshells.checks;
+    inherit (devshells) checks devShells;
   };
 }

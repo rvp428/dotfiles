@@ -56,11 +56,13 @@ in {
   config = lib.mkIf cfg.enable (lib.mkMerge [
     (lib.mkIf cfg.manageXdgBinHome {
       xdg.enable = true;
-      home.sessionVariables.XDG_BIN_HOME = lib.mkDefault defaultBin;
-      home.sessionPath = ["$XDG_BIN_HOME"];
-      home.activation.ensureXdgBinHome = lib.hm.dag.entryAfter ["writeBoundary"] ''
-        mkdir -p ${xdgBin}
-      '';
+      home = {
+        sessionVariables.XDG_BIN_HOME = lib.mkDefault defaultBin;
+        sessionPath = ["$XDG_BIN_HOME"];
+        activation.ensureXdgBinHome = lib.hm.dag.entryAfter ["writeBoundary"] ''
+          mkdir -p ${xdgBin}
+        '';
+      };
     })
     {
       # Put the interpreter on PATH (fast; no nix-shell)

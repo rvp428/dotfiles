@@ -150,23 +150,25 @@ in {
 
   config = lib.mkIf cfg.enable {
     # Tooling
-    home.packages = lib.mkIf cfg.installPackages (with pkgs; [
-      amazon-ecr-credential-helper
-      awscli2
-      aws-sso-util
-      jq
-    ]);
+    home = {
+      packages = lib.mkIf cfg.installPackages (with pkgs; [
+        amazon-ecr-credential-helper
+        awscli2
+        aws-sso-util
+        jq
+      ]);
 
-    # ~/.aws/config (composed)
-    home.file.".aws/config" = lib.mkIf cfg.manageAwsConfig {
-      text = renderAwsConfig cfg.ssoSessions cfg.profiles;
-    };
+      # ~/.aws/config (composed)
+      file.".aws/config" = lib.mkIf cfg.manageAwsConfig {
+        text = renderAwsConfig cfg.ssoSessions cfg.profiles;
+      };
 
-    # ~/.docker/config.json (ECR credHelpers only)
-    home.file.".docker/config.json" = lib.mkIf (cfg.manageDockerConfig && cfg.ecrRegistries != []) {
-      text = dockerConfigJson;
-      # set overwrite = true if you want HM to fully own it
-      # overwrite = false;
+      # ~/.docker/config.json (ECR credHelpers only)
+      file.".docker/config.json" = lib.mkIf (cfg.manageDockerConfig && cfg.ecrRegistries != []) {
+        text = dockerConfigJson;
+        # set overwrite = true if you want HM to fully own it
+        # overwrite = false;
+      };
     };
 
     # Fish helpers
