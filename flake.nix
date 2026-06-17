@@ -68,6 +68,17 @@
         claude-code
         codex
       ];
+      primaryUserCfg = lib.attrByPath [cfg.user] null config.users.users;
+      primaryUserShell =
+        if primaryUserCfg == null
+        then null
+        else primaryUserCfg.shell;
+      primaryUserShellPath =
+        if primaryUserShell == null
+        then null
+        else if lib.types.shellPackage.check primaryUserShell
+        then "/run/current-system/sw${primaryUserShell.shellPath}"
+        else toString primaryUserShell;
     in {
       # Make the module configurable by the wrapper
       options.dotfiles = {
@@ -262,7 +273,7 @@
         # Reasonable default home path on macOS (override from wrapper if needed)
         users.users.${cfg.user} = {
           home = lib.mkDefault "/Users/${cfg.user}";
-          shell = pkgs.zsh;
+          shell = lib.mkDefault pkgs.zsh;
         };
 
         system.primaryUser = lib.mkDefault cfg.user;
@@ -272,7 +283,26 @@
             assertion = lib.all (cmd: builtins.match "^[A-Za-z0-9._+-]+$" cmd != null) cfg.homebrew.exposedCommands;
             message = "dotfiles.homebrew.exposedCommands must contain command names only (letters, numbers, ., _, +, -).";
           }
+          {
+            assertion = primaryUserCfg != null && primaryUserShell != null;
+            message = ''
+              dotfiles primary user shell activation is enabled, but users.users.${cfg.user}.shell is not set.
+            '';
+          }
         ];
+
+        system.activationScripts.postActivation.text = lib.mkAfter (lib.optionalString (primaryUserShellPath != null) ''
+          wanted=${lib.escapeShellArg primaryUserShellPath}
+          dsclUser=${lib.escapeShellArg "/Users/${cfg.user}"}
+
+          current=$(/usr/bin/dscl . -read "$dsclUser" UserShell 2>/dev/null \
+            | /usr/bin/sed 's/^UserShell: //') || current=""
+
+          if [ "$current" != "$wanted" ]; then
+            echo "setting primary user shell to $wanted..." >&2
+            /usr/bin/dscl . -create "$dsclUser" UserShell "$wanted"
+          fi
+        '');
 
         environment.systemPackages = lib.optionals (cfg.homebrew.enable && builtins.length homebrewExposedCommands > 0) [
           brewCliWrappers
