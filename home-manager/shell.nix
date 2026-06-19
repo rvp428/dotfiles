@@ -40,6 +40,11 @@ in {
         ".." = "cd ..";
         "..." = "cd ../..";
         "...." = "cd ../../..";
+        l = "eza";
+        ll = "eza -l";
+        la = "eza -la";
+        lt = "eza --tree --level=2";
+        k = "kubectl";
 
         ga = "git add";
         gaa = "git add --all";

@@ -135,6 +135,7 @@
     enable = true;
     userDirs.setSessionVariables = false;
     configFile."ghostty/config".text = ''
+      command = /run/current-system/sw/bin/zsh
       font-family = Iosevka Term
       font-size = 14
     '';

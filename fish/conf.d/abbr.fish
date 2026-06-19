@@ -3,6 +3,11 @@
 abbr -a .. 'cd ..'
 abbr -a ... 'cd ../..'
 abbr -a .... 'cd ../../..'
+abbr -a l 'eza'
+abbr -a ll 'eza -l'
+abbr -a la 'eza -la'
+abbr -a lt 'eza --tree --level=2'
+abbr -a k 'kubectl'
 
 abbr -a ga 'git add'
 abbr -a gaa 'git add --all'
