@@ -95,6 +95,24 @@
           example = "/Users/raoul/dotfiles";
         };
 
+        identity = lib.mkOption {
+          type = lib.types.submodule {
+            options = {
+              name = lib.mkOption {
+                type = lib.types.str;
+                description = "Commit author name shared by Git and Jujutsu.";
+                example = "Raoul van Prooijen";
+              };
+              email = lib.mkOption {
+                type = lib.types.str;
+                description = "Commit author email shared by Git and Jujutsu.";
+                example = "146374886+rvp428@users.noreply.github.com";
+              };
+            };
+          };
+          description = "Commit identity to expose to Git-compatible version control tools.";
+        };
+
         extraPackages = lib.mkOption {
           type = lib.types.listOf lib.types.package;
           default = [];
@@ -253,6 +271,8 @@
 
         home-manager.users.${cfg.user} = _: {
           home.packages = codexPackages ++ cfg.extraPackages;
+
+          dotfiles.identity = cfg.identity;
 
           dotfiles.pytools = {
             enable = true;

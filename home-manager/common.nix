@@ -42,17 +42,15 @@
 
       # dev
       awscli2
-      delta
       direnv
       docker
       docker-compose
       gh
-      git
       git-spice
+      just
       jq
       jqp
       kubectl
-      meld
       nix-direnv
       pre-commit
       yq-go
