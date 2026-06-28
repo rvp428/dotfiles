@@ -74,6 +74,17 @@ in {
         gsw = "git switch";
         gswc = "git switch -c";
 
+        j = "jj";
+        js = "jj status";
+        jl = "jj log";
+        jd = "jj diff";
+        jsh = "jj show";
+        jf = "jj git fetch";
+        jp = "jj git push";
+        jn = "jj new";
+        je = "jj edit";
+        jsq = "jj squash";
+
         d = "docker";
         db = "docker build .";
         dr = "docker run -it --rm";

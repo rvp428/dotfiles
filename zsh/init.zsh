@@ -49,6 +49,23 @@ _dotfiles_prompt_git() {
   print -r -- "%F{yellow}git:${branch}${staged}${dirty}${untracked}${ahead}${behind}${state}%f"
 }
 
+_dotfiles_prompt_jj() {
+  command -v jj >/dev/null 2>&1 || return
+  command jj root --ignore-working-copy >/dev/null 2>&1 || return
+
+  local line
+  line="$(command jj log --ignore-working-copy --no-pager --color never --no-graph -r @ \
+    -T 'separate(" ", change_id.shortest(8), bookmarks, if(!empty, "*"), if(conflict, "!")) ++ "\n"' \
+    2>/dev/null)" || return 0
+  [[ -n "$line" ]] || return 0
+
+  print -r -- "%F{yellow}jj:${line}%f"
+}
+
+_dotfiles_prompt_vcs() {
+  _dotfiles_prompt_jj || _dotfiles_prompt_git
+}
+
 _dotfiles_prompt_devenv() {
   local envrc line shell_name
 
@@ -171,7 +188,7 @@ _dotfiles_prompt_precmd() {
   fi
   DOTFILES_PROMPT_CMD_START=""
 
-  DOTFILES_PROMPT_LEFT="%F{cyan}%~%f $(_dotfiles_prompt_git)"
+  DOTFILES_PROMPT_LEFT="%F{cyan}%~%f $(_dotfiles_prompt_vcs)"
 
   for segment in \
     "$(_dotfiles_prompt_devenv)" \

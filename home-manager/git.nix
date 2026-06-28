@@ -31,7 +31,38 @@ in {
 
     programs.jujutsu = {
       enable = true;
-      settings.user = identity;
+
+      settings = {
+        user = identity;
+
+        ui = {
+          pager.command = ["delta"];
+          diff-formatter = ":git";
+          diff-editor = "meld-3";
+          merge-editor = "meld";
+          conflict-marker-style = "diff";
+        };
+
+        git = {
+          colocate = true;
+          write-change-id-header = true;
+          track-default-bookmark-on-clone = true;
+        };
+
+        merge-tools = {
+          meld.program = meldBin;
+          meld-3.program = meldBin;
+        };
+
+        aliases = {
+          st = ["status"];
+          l = ["log" "-n" "10"];
+          ll = ["log"];
+          d = ["diff"];
+          ds = ["diff" "--stat"];
+          sh = ["show"];
+        };
+      };
     };
 
     programs.git = {
