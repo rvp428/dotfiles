@@ -387,14 +387,10 @@
             (import ./home-manager/unfree.nix)
           ]
           ++ [
-            nixvim.homeModules.nixvim
-            (_: {
-              programs.nixvim.nixpkgs.source = nixvim.inputs.nixpkgs;
-            })
             nix-index-database.homeModules.nix-index
             (import ./home-manager/common.nix)
             (import ./home-manager/git.nix)
-            (import ./home-manager/nvim.nix)
+            (import ./home-manager/nvim.nix {inherit nixvim;})
             (import ./home-manager/shell.nix)
             (import ./home-manager/poetry.nix)
             (import ./home-manager/pytools.nix)
