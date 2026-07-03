@@ -3,7 +3,11 @@
   nixvimPkgs = import (import "${nixvim.outPath}/nixpkgs.nix") {
     inherit system;
   };
+  statixNoCheck = nixvimPkgs.statix.overrideAttrs {
+    doCheck = false;
+  };
   nvim = nixvim.legacyPackages.${system}.makeNixvimWithModule {
+    extraSpecialArgs = {inherit statixNoCheck;};
     pkgs = nixvimPkgs;
     module = import ./nixvim-config.nix;
   };

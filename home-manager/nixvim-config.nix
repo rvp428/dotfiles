@@ -1,4 +1,8 @@
-{pkgs, ...}: {
+{
+  pkgs,
+  statixNoCheck,
+  ...
+}: {
   opts = {
     # Allow loading local .nvimrc files (secure=true prevents dangerous commands)
     exrc = true;
@@ -61,6 +65,7 @@
 
     lint = {
       enable = true;
+      autoInstall.overrides.statix = statixNoCheck;
       lintersByFt = {
         nix = ["statix" "deadnix"];
       };

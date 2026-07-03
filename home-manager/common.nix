@@ -84,7 +84,9 @@ in {
         alejandra
         deadnix
         nixfmt-tree
-        statix
+        (statix.overrideAttrs {
+          doCheck = false;
+        })
       ];
 
       file."Library/Fonts/Nix/IosevkaTerm".source = "${pkgs.iosevka-bin.override {variant = "SGr-IosevkaTerm";}}/share/fonts/truetype";
