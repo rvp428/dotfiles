@@ -61,11 +61,9 @@
         system = pkgs.stdenv.hostPlatform.system;
         config.allowUnfreePredicate = pkg:
           builtins.elem (lib.getName pkg) [
-            "claude-code"
           ];
       };
       codexPackages = with codexPkgs; [
-        claude-code
         codex
       ];
       primaryUserCfg = lib.attrByPath [cfg.user] null config.users.users;
@@ -148,7 +146,7 @@
           };
           baseCasks = lib.mkOption {
             type = lib.types.listOf lib.types.str;
-            default = [];
+            default = ["ghostty"];
             description = "Base casks for all machines.";
           };
           baseMasApps = lib.mkOption {
