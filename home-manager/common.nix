@@ -5,6 +5,13 @@
   ...
 }: let
   githubSsh = config.dotfiles.ssh.github;
+  customSshHosts = config.dotfiles.ssh.hosts;
+  customSshSettings =
+    lib.mapAttrs (_: host: {
+      HostName = host.hostName;
+      User = host.user;
+    })
+    customSshHosts;
   githubSshSettings = lib.optionalAttrs (githubSsh.identityFile != null) {
     "github.com" =
       {
@@ -18,12 +25,39 @@
       };
   };
 in {
-  options.dotfiles.ssh.github = {
-    identityFile = lib.mkOption {
-      type = lib.types.nullOr lib.types.str;
-      default = null;
-      example = "~/.ssh/id_rsa";
-      description = "Path to the private SSH key to use for GitHub. The key must be restored outside Nix.";
+  options.dotfiles.ssh = {
+    hosts = lib.mkOption {
+      type = lib.types.attrsOf (lib.types.submodule {
+        options = {
+          hostName = lib.mkOption {
+            type = lib.types.str;
+            description = "HostName value for this SSH host alias.";
+            example = "192.168.1.10";
+          };
+          user = lib.mkOption {
+            type = lib.types.str;
+            description = "User value for this SSH host alias.";
+            example = "raoul";
+          };
+        };
+      });
+      default = {};
+      example = {
+        mini01 = {
+          hostName = "192.168.7.128";
+          user = "raoul";
+        };
+      };
+      description = "Additional SSH host aliases to add to the generated SSH config.";
+    };
+
+    github = {
+      identityFile = lib.mkOption {
+        type = lib.types.nullOr lib.types.str;
+        default = null;
+        example = "~/.ssh/id_rsa";
+        description = "Path to the private SSH key to use for GitHub. The key must be restored outside Nix.";
+      };
     };
   };
 
@@ -125,6 +159,7 @@ in {
               ControlPersist = "no";
             };
           }
+          // customSshSettings
           // githubSshSettings;
       };
 

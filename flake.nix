@@ -117,6 +117,19 @@
           description = "Additional packages to install via home-manager";
         };
 
+        hosts = lib.mkOption {
+          type = lib.types.attrsOf (lib.types.listOf lib.types.str);
+          default = {};
+          example = {
+            "127.0.0.1" = ["example.test" "api.example.test"];
+            "192.168.1.10" = ["nas.local"];
+          };
+          description = ''
+            Custom hosts file entries to append to `/etc/hosts`, keyed by IP
+            address with a list of hostnames for each address.
+          '';
+        };
+
         homebrew = {
           enable = lib.mkEnableOption "Enable Homebrew management via nix-darwin";
 
@@ -184,6 +197,26 @@
 
       config = lib.mkIf cfg.enable (let
         homebrewExposedCommands = lib.unique cfg.homebrew.exposedCommands;
+        hostsFile =
+          ''
+            ##
+            # Host Database
+            #
+            # localhost is used to configure the loopback interface
+            # when the system is booting.  Do not change this entry.
+            ##
+            127.0.0.1       localhost
+            255.255.255.255 broadcasthost
+            ::1             localhost
+          ''
+          + lib.optionalString (cfg.hosts != {}) (
+            "\n# Custom entries managed by nix-darwin\n"
+            + lib.concatStringsSep "\n" (
+              lib.mapAttrsToList (address: hostnames: "${address} ${lib.concatStringsSep " " hostnames}")
+              cfg.hosts
+            )
+            + "\n"
+          );
         defaultBrewPrefix =
           if pkgs.stdenv.hostPlatform.system == "aarch64-darwin"
           then "/opt/homebrew"
@@ -295,6 +328,14 @@
         };
 
         system.primaryUser = lib.mkDefault cfg.user;
+
+        environment.etc."hosts" = {
+          text = hostsFile;
+          knownSha256Hashes = [
+            # Stock macOS /etc/hosts with tabs between the first two columns.
+            "c7dd0e2ed261ce76d76f852596c5b54026b9a894fa481381ffd399b556c0e2da"
+          ];
+        };
 
         assertions = [
           {
