@@ -13,5 +13,4 @@
   };
 in {
   home.packages = [nvim];
-  xdg.configFile."nvim/lua".source = ../nvim/lua;
 }

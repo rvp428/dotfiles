@@ -3,6 +3,8 @@
   statixNoCheck,
   ...
 }: {
+  extraFiles."lua".source = ../nvim/lua;
+
   opts = {
     # Allow loading local .nvimrc files (secure=true prevents dangerous commands)
     exrc = true;
