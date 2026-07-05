@@ -24,6 +24,7 @@
     nixpkgs-master,
     devshells,
     nix-index-database,
+    nixvim,
     ...
   }: let
     systems = [
@@ -32,6 +33,18 @@
       "aarch64-darwin"
     ];
     forAllSystems = nixpkgs.lib.genAttrs systems;
+    homeModuleBase = {
+      imports = [
+        nix-index-database.homeModules.nix-index
+        (import ./home-manager/profile.nix {inherit nixpkgs-master;})
+        (import ./home-manager/common.nix)
+        (import ./home-manager/git.nix)
+        (import ./home-manager/nvim.nix {inherit nixvim;})
+        (import ./home-manager/shell.nix)
+        (import ./home-manager/poetry.nix)
+        (import ./home-manager/pytools.nix)
+      ];
+    };
   in {
     formatter = forAllSystems (system: let
       pkgs = nixpkgs.legacyPackages.${system};
@@ -48,24 +61,19 @@
         '';
       });
 
+    homeModules = {
+      base = homeModuleBase;
+      default = homeModuleBase;
+    };
+
     # Export a nix-darwin module that carries your macOS defaults + HM wiring.
     darwinModules.base = {
       lib,
       pkgs,
       config,
-      nixvim,
       ...
     }: let
       cfg = config.dotfiles;
-      codexPkgs = import nixpkgs-master {
-        system = pkgs.stdenv.hostPlatform.system;
-        config.allowUnfreePredicate = pkg:
-          builtins.elem (lib.getName pkg) [
-          ];
-      };
-      codexPackages = with codexPkgs; [
-        codex
-      ];
       primaryUserCfg = lib.attrByPath [cfg.user] null config.users.users;
       primaryUserShell =
         if primaryUserCfg == null
@@ -301,19 +309,14 @@
         # HM integration
 
         home-manager.users.${cfg.user} = _: {
-          home.packages = codexPackages ++ cfg.extraPackages;
-
-          dotfiles.identity = cfg.identity;
-
-          dotfiles.pytools = {
+          dotfiles.profile = {
             enable = true;
-            manageXdgBinHome = true;
+            identity = cfg.identity;
             dotfilesDir =
               if cfg.dotfilesDir != null
               then cfg.dotfilesDir
               else "${config.users.users.${cfg.user}.home}/dotfiles";
-            pyPkgs = ps: [ps.ruamel-yaml];
-            scripts.fold-scalars-yaml = "py/fold_scalars_yaml.py";
+            extraPackages = cfg.extraPackages;
           };
         };
 
@@ -428,13 +431,7 @@
             (import ./home-manager/unfree.nix)
           ]
           ++ [
-            nix-index-database.homeModules.nix-index
-            (import ./home-manager/common.nix)
-            (import ./home-manager/git.nix)
-            (import ./home-manager/nvim.nix {inherit nixvim;})
-            (import ./home-manager/shell.nix)
-            (import ./home-manager/poetry.nix)
-            (import ./home-manager/pytools.nix)
+            homeModuleBase
           ];
       });
     };

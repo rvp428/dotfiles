@@ -6,6 +6,8 @@
 }: let
   githubSsh = config.dotfiles.ssh.github;
   customSshHosts = config.dotfiles.ssh.hosts;
+  desktop = config.dotfiles.profile.desktop.enable;
+  iosevkaTerm = pkgs.iosevka-bin.override {variant = "SGr-IosevkaTerm";};
   customSshSettings =
     lib.mapAttrs (_: host: {
       HostName = host.hostName;
@@ -79,51 +81,60 @@ in {
 
       # The home.packages option allows you to install Nix packages into your
       # environment.
-      packages = with pkgs; [
-        # General use
-        asciidoctor
-        atuin
-        bat
-        eza
-        fd # find replacement
-        fzf
-        haskellPackages.pandoc-cli
-        htop
-        (iosevka-bin.override {variant = "SGr-IosevkaTerm";})
-        obsidian
-        ripgrep
-        viddy
-        xh
+      packages = with pkgs;
+        [
+          # General use
+          asciidoctor
+          atuin
+          bat
+          eza
+          fd # find replacement
+          fzf
+          haskellPackages.pandoc-cli
+          htop
+          ripgrep
+          viddy
+          xh
 
-        # shell
-        alacritty
-        nushell
+          # shell
+          nushell
 
-        # dev
-        awscli2
-        direnv
-        docker
-        docker-compose
-        gh
-        git-spice
-        just
-        jq
-        jqp
-        kubectl
-        nix-direnv
-        pre-commit
-        yq-go
+          # dev
+          awscli2
+          direnv
+          docker
+          docker-compose
+          gh
+          git-spice
+          just
+          jq
+          jqp
+          kubectl
+          nix-direnv
+          pre-commit
+          yq-go
 
-        # Nix logistics -- should these just be devshells also?
-        alejandra
-        deadnix
-        nixfmt-tree
-        (statix.overrideAttrs {
-          doCheck = false;
-        })
-      ];
+          # Nix logistics -- should these just be devshells also?
+          alejandra
+          deadnix
+          nixfmt-tree
+          (statix.overrideAttrs {
+            doCheck = false;
+          })
+        ]
+        ++ lib.optionals desktop [
+          alacritty
+          iosevkaTerm
+          obsidian
+        ];
 
-      file."Library/Fonts/Nix/IosevkaTerm".source = "${pkgs.iosevka-bin.override {variant = "SGr-IosevkaTerm";}}/share/fonts/truetype";
+      file."Library/Fonts/Nix/IosevkaTerm" = lib.mkIf (desktop && pkgs.stdenv.hostPlatform.isDarwin) {
+        source = "${iosevkaTerm}/share/fonts/truetype";
+      };
+    };
+
+    xdg.dataFile."fonts/Nix/IosevkaTerm" = lib.mkIf (desktop && pkgs.stdenv.hostPlatform.isLinux) {
+      source = "${iosevkaTerm}/share/fonts/truetype";
     };
 
     targets = lib.mkIf pkgs.stdenv.hostPlatform.isDarwin {
@@ -187,15 +198,16 @@ in {
       };
     };
 
-    # 2) Ghostty config
     xdg = {
       enable = true;
       userDirs.setSessionVariables = false;
-      configFile."ghostty/config".text = ''
-        command = /run/current-system/sw/bin/zsh
-        font-family = Iosevka Term
-        font-size = 14
-      '';
+      configFile."ghostty/config" = lib.mkIf desktop {
+        text = ''
+          command = ${pkgs.zsh}/bin/zsh
+          font-family = Iosevka Term
+          font-size = 14
+        '';
+      };
     };
   };
 }
