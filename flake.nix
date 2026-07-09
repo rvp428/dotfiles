@@ -138,6 +138,22 @@
           '';
         };
 
+        linuxBuilder = {
+          enable = lib.mkEnableOption "Enable nix-darwin's Linux builder";
+
+          ephemeral = lib.mkOption {
+            type = lib.types.bool;
+            default = false;
+            description = "Wipe the Linux builder filesystem on every restart.";
+          };
+
+          config = lib.mkOption {
+            type = lib.types.deferredModule;
+            default = {};
+            description = "Extra NixOS configuration for nix-darwin's Linux builder.";
+          };
+        };
+
         homebrew = {
           enable = lib.mkEnableOption "Enable Homebrew management via nix-darwin";
 
@@ -258,6 +274,12 @@
         nix = {
           enable = true;
           settings.experimental-features = ["nix-command" "flakes"];
+
+          linux-builder = {
+            enable = cfg.linuxBuilder.enable;
+            ephemeral = cfg.linuxBuilder.ephemeral;
+            config = cfg.linuxBuilder.config;
+          };
 
           registry = {
             nixpkgs.flake = nixpkgs;
