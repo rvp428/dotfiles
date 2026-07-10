@@ -37,6 +37,7 @@
       imports = [
         nix-index-database.homeModules.nix-index
         (import ./home-manager/profile.nix {inherit nixpkgs-master;})
+        (import ./home-manager/agent-allowlist.nix)
         (import ./home-manager/common.nix)
         (import ./home-manager/git.nix)
         (import ./home-manager/nvim.nix {inherit nixvim;})

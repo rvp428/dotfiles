@@ -69,5 +69,7 @@ in {
       pyPkgs = ps: [ps.ruamel-yaml];
       scripts.fold-scalars-yaml = "py/fold_scalars_yaml.py";
     };
+
+    dotfiles.agentAllowlist.enable = true;
   };
 }
