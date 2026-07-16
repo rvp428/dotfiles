@@ -8,12 +8,19 @@
   customSshHosts = config.dotfiles.ssh.hosts;
   desktop = config.dotfiles.profile.desktop.enable;
   iosevkaTerm = pkgs.iosevka-bin.override {variant = "SGr-IosevkaTerm";};
-  customSshSettings =
-    lib.mapAttrs (_: host: {
+  customSshSettings = lib.mapAttrs (_: host:
+    {
       HostName = host.hostName;
       User = host.user;
+    }
+    // lib.optionalAttrs host.forwardAgent {
+      ForwardAgent = true;
+    }
+    // lib.optionalAttrs (host.identityFiles != []) {
+      IdentitiesOnly = true;
+      IdentityFile = host.identityFiles;
     })
-    customSshHosts;
+  customSshHosts;
   githubSshSettings = lib.optionalAttrs (githubSsh.identityFile != null) {
     "github.com" =
       {
@@ -41,6 +48,17 @@ in {
             description = "User value for this SSH host alias.";
             example = "raoul";
           };
+          forwardAgent = lib.mkOption {
+            type = lib.types.bool;
+            default = false;
+            description = "Whether to enable SSH agent forwarding for this host alias.";
+          };
+          identityFiles = lib.mkOption {
+            type = lib.types.listOf lib.types.str;
+            default = [];
+            example = ["~/.ssh/id_ed25519_lab"];
+            description = "Private SSH key paths to use for this host alias. The keys must be restored outside Nix.";
+          };
         };
       });
       default = {};
@@ -48,6 +66,8 @@ in {
         mini01 = {
           hostName = "192.168.7.128";
           user = "raoul";
+          forwardAgent = true;
+          identityFiles = ["~/.ssh/id_ed25519_lab"];
         };
       };
       description = "Additional SSH host aliases to add to the generated SSH config.";
